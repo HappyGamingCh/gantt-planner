@@ -87,6 +87,8 @@ describe('compute', () => {
       times.push(performance.now() - t0);
     }
     times.sort((a, b) => a - b);
-    expect(times[7]).toBeLessThan(10);
+    // §3.4 "well under 10 ms" holds on a planner's PC; a shared CI runner (slower, measuring coverage) only has to
+    // catch a gross slowdown.
+    expect(times[7]).toBeLessThan(process.env.CI ? 50 : 10);
   });
 });
