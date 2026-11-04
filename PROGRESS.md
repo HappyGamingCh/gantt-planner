@@ -316,4 +316,5 @@ Full code audit after M5: 14 area finders (engine, Excel read/write, store, file
 - [x] `npm run typecheck` clean; `npm test` 66 files, 783 tests, also with `TZ=UTC` (as on GitHub's runners); the four `.xlsx` files open in Excel 365 without repair; the sample shows the same figures (37 %, −3.5 pts, finish 17 Oct +2d, 3 late)
 - [x] `.github/workflows/pages.yml`: on push to `main`, type check, tests, build, then deploy the single file as `index.html` (SPEC §3.1)
 - [x] CLAUDE.md: rule 8 (made-up names only) and the GitHub Pages note
-- [ ] Public history from one clean commit, Pages switched on (owner's choice of route)
+- [x] Owner's choice: a new public repository with one clean commit (the old one renamed to a private backup); GitHub Pages switched on in Actions mode: https://happygamingch.github.io/gantt-planner/
+- [x] The first Pages run stopped at the engine timing test (17 ms on the shared runner with coverage, limit 10 ms): with `CI` set the limit is 50 ms (SPEC §17); the second run passed and deployed
