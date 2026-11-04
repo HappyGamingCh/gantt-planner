@@ -1,0 +1,36 @@
+{
+  "name": "gantt-planner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline single-file Gantt planner with an Excel workbook as the data store",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run --coverage",
+    "sample": "tsx scripts/make-sample.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-sans-thai": "^5.3.0",
+    "chart.js": "^4.6.1",
+    "exceljs": "^4.4.0",
+    "lucide-react": "^1.65.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.16"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "^5.0.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "^5.0.5"
+  }
+}

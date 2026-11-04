@@ -1,0 +1,309 @@
+/* Issues panel (SPEC §7.11, audit item 133): a right sheet with underlined tabs and count pills; problems are white cards with
+   a severity-coloured left rule, a severity icon and "#id · name"; changes fold by field. */
+.sheet {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: var(--drawer-w);
+  max-width: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-3);
+  animation: sheet-in 150ms ease-out;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+
+.sheet-head {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 var(--sp-2) 0 var(--sp-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.sheet-head > .btn {
+  align-self: center;
+}
+
+/* Underline tabs: the active one is --text with a 2 px accent rule on the head's bottom edge. */
+.sheet-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.sheet-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: inset 0 -2px 0 transparent;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: color var(--ease), box-shadow var(--ease);
+}
+
+.sheet-tabs button:hover {
+  color: var(--text);
+}
+
+.sheet-tabs button[aria-selected='true'] {
+  background: none;
+  box-shadow: inset 0 -2px 0 var(--accent);
+  color: var(--text);
+}
+
+.sheet-tabs button:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Count pill: on the tabs and on each Changes group ("×4"). The active tab's count is blue-tinted. */
+.tab-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+
+.sheet-tabs [aria-selected='true'] .tab-count {
+  background: var(--accent-soft);
+  color: var(--progress-text);
+}
+
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  font-size: var(--fs-md);
+}
+
+.sheet-empty {
+  margin: var(--sp-6) 0;
+  color: var(--text-3);
+  font-size: var(--fs-md);
+  text-align: center;
+}
+
+.problem-list {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Errors, Warnings (and the closed Notes) each under a heading: severity is never shown by colour alone (§10). */
+.problem-group + .problem-group,
+.problem-notes {
+  margin-top: var(--sp-5);
+}
+
+.problem-heading {
+  display: block;
+  margin: 0 0 var(--sp-2);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* Fold summaries (Notes, Changes groups): a CSS chevron instead of the browser's triangle; it turns down when open. */
+.change-group summary,
+summary.problem-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 32px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  list-style: none;
+  cursor: pointer;
+  transition: background-color var(--ease);
+}
+
+.change-group summary::-webkit-details-marker,
+summary.problem-heading::-webkit-details-marker {
+  display: none;
+}
+
+.change-group summary::before,
+summary.problem-heading::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--text-3);
+  border-bottom: 1.5px solid var(--text-3);
+  transform: rotate(-45deg);
+  transition: transform var(--ease);
+}
+
+.change-group[open] > summary::before,
+details[open] > summary.problem-heading::before {
+  transform: rotate(45deg);
+}
+
+.change-group summary:hover,
+summary.problem-heading:hover {
+  background: var(--surface-2);
+}
+
+/* The Notes chevron lines up with the cards' left edge, like the Errors / Warnings headings above. */
+summary.problem-heading {
+  margin-inline: calc(-1 * var(--sp-2));
+}
+
+.problem {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--idle);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.problem-error {
+  border-left-color: var(--late);
+}
+
+.problem-warning {
+  border-left-color: var(--risk);
+}
+
+/* Icon · message with "#id · name" under it · chevron (when it shows a task). */
+.problem-text {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  column-gap: var(--sp-2);
+  align-items: start;
+  width: 100%;
+  padding: 10px var(--sp-3);
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  text-align: left;
+}
+
+.problem-msg {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.problem-task {
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.problem-icon {
+  margin-top: 2px;
+}
+
+.problem-icon-error {
+  color: var(--late-text);
+}
+
+.problem-icon-warning {
+  color: var(--risk-text);
+}
+
+.problem-icon-info {
+  color: var(--text-2);
+}
+
+.problem-go {
+  align-self: center;
+  color: var(--text-3);
+  transition: color var(--ease);
+}
+
+/* The hover fill keeps the card's corners by its own radius: clipping the card would hide the focus ring (§10). */
+button.problem-text {
+  border-radius: inherit;
+  cursor: pointer;
+  transition: background-color var(--ease);
+}
+
+.problem:has(.fix-button) button.problem-text {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+button.problem-text:hover {
+  background: var(--surface-2);
+}
+
+button.problem-text:hover .problem-go {
+  color: var(--text-2);
+}
+
+/* Quick fix: a small secondary button under the message. */
+.fix-button {
+  height: 26px;
+  margin: 0 var(--sp-3) 10px calc(var(--sp-3) + 16px + var(--sp-2)); /* lines up with the message */
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-sm);
+}
+
+.change-groups {
+  display: grid;
+  gap: 2px;
+}
+
+.change-group summary {
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+/* Rows line up with the field name: summary padding 8 + chevron 6 + gap 8. */
+.change-group ul {
+  margin: 0 0 var(--sp-2);
+  padding: 0 0 0 22px;
+  list-style: none;
+}
+
+.change-group li {
+  padding: 2px 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.change-group .btn-link {
+  font-size: inherit;
+}
+
+.change-reason {
+  color: var(--text-3);
+}

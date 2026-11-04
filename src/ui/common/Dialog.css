@@ -1,0 +1,195 @@
+/* Modal dialogs (SPEC §7.11): a white card over a dimmed app, title, body, then the actions at the right. No entry
+   animation (§7.2). */
+.dialog {
+  width: min(440px, calc(100vw - 2 * var(--sp-6)));
+  padding: var(--sp-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-3);
+}
+
+.dialog::backdrop {
+  background: var(--backdrop);
+}
+
+.dialog h2 {
+  margin: 0 0 var(--sp-2);
+  color: var(--text);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+}
+
+/* Body copy: 14 px at a prose line height (Thai file and task names wrap without clipped marks) */
+.dialog-body {
+  color: var(--text-2);
+  font-size: var(--fs-base);
+  line-height: var(--lh-prose);
+}
+
+.dialog-body p {
+  margin: 0 0 var(--sp-2);
+}
+
+.dialog-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* The browser's own error under a save failure (§3.5), for whoever has to diagnose it. */
+.dialog-body .dialog-detail {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh);
+  overflow-wrap: anywhere;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin-top: var(--sp-6);
+}
+
+/* Forms (New plan, Project settings): the shared .form / .field look (controls.css). The label is 12 px medium; what
+   is typed in the field is regular weight, like every other input. */
+.dialog .field {
+  line-height: var(--lh);
+}
+
+.dialog .field input,
+.dialog .field select {
+  font-weight: var(--fw-regular);
+}
+
+/* "Also move N tasks …": a check row whose label can wrap; the box stays by the first line */
+.dialog .form .check {
+  align-items: flex-start;
+  padding-block: 3px;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+}
+
+.dialog .form .check input {
+  flex: none;
+  margin: 3px 0 0;
+}
+
+.dialog-wide {
+  width: min(760px, calc(100vw - 2 * var(--sp-6)));
+}
+
+/* Help: when the window is short, only the body scrolls, so the title and Close stay in view (§7.12). `[open]` keeps
+   the closed dialog hidden. */
+.dialog-help[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2 * var(--sp-6));
+  overflow: hidden;
+}
+
+.dialog-help .dialog-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Wider than other wide dialogs: the keys and Mouse fit a 1280×720 laptop with no scrolling. */
+.dialog-help {
+  width: min(960px, calc(100vw - 2 * var(--sp-6)));
+}
+
+/* Keys, then Mouse, in two balanced columns (one when narrow); a row never splits. */
+.shortcuts-cols {
+  columns: 2 300px;
+  column-gap: var(--sp-6);
+}
+
+.shortcuts-cols tr {
+  break-inside: avoid;
+}
+
+/* Keyboard shortcuts (§7.12). Separate borders: a collapsed one repeats at the top of the second column. */
+.shortcuts {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-md);
+}
+
+.shortcuts td {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  line-height: var(--lh);
+  vertical-align: top;
+}
+
+/* As narrow as the keys, so the descriptions wrap less */
+.shortcuts td:first-child {
+  width: 1%;
+  padding-right: var(--sp-3);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.shortcuts-mouse td:first-child {
+  width: 45%;
+  white-space: normal;
+}
+
+/* A key drawn as a keycap: white, with a 2 px bottom edge */
+.shortcuts kbd {
+  display: inline-block;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  color: var(--text);
+  font: var(--fw-medium) var(--fs-xs) / 17px var(--font);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* "Mouse": an 11 px English overline */
+.shortcuts-head {
+  margin: var(--sp-5) 0 6px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  break-after: avoid;
+}
+
+/* About */
+.about-name {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--text);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+}
+
+.about-name .app-mark {
+  width: 18px;
+  height: 18px;
+}
+
+.about-version {
+  color: var(--text-3);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+.about-credits {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh);
+}

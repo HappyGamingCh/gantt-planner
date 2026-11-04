@@ -1,0 +1,464 @@
+/* Task drawer (SPEC §7.9). The sheet itself (.sheet: position, width, slide-in) is shared with the Issues panel. */
+.sheet.drawer {
+  box-shadow: var(--shadow-3); /* a deeper shadow than menus and popovers: it sits over the Gantt */
+}
+
+/* Head: "#12", the New tag, then previous / next / close at the right (44 px) */
+.drawer-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 44px;
+  padding: 0 var(--sp-2) 0 var(--sp-4);
+}
+
+.drawer-id {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer-head .new-tag {
+  margin-left: 0; /* the head's gap already spaces it */
+}
+
+/* Previous / next task and Close: 28 px ghost icon buttons. At the first / last row they look disabled but stay
+   focusable (aria-disabled, the shared .btn-quiet rule), so the keyboard keeps its place. */
+.drawer-nav {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.drawer-nav .btn {
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+}
+
+/* Name block: the title reads as a heading until touched. Its box starts 8 px in, so with its 1 px border and 7 px
+   padding the text lines up with "#12" and the sections below (16 px). */
+.drawer-name {
+  flex: none;
+  padding: 0 var(--sp-4) var(--sp-4) var(--sp-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  padding-left: var(--sp-2);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+
+/* Sections: a hairline between them, none after the last */
+.drawer-section {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-body > :last-child,
+.drawer-fold .drawer-section:last-child {
+  border-bottom: 0;
+}
+
+/* Section heading: an 11 px English overline; the lock says the section is read-only in this mode */
+.drawer-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--sp-3);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.drawer-section h3 svg {
+  flex: none;
+}
+
+/* Plan mode: "Actual and forecast" folded away, with a CSS chevron that turns when open */
+.drawer-fold {
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-fold summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  list-style: none;
+  cursor: pointer;
+  transition: color var(--ease);
+}
+
+.drawer-fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.drawer-fold summary::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  border-right: 1.5px solid var(--text-3);
+  border-bottom: 1.5px solid var(--text-3);
+  transform: rotate(-45deg);
+  transition: transform var(--ease);
+}
+
+.drawer-fold[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.drawer-fold summary:hover {
+  color: var(--text);
+}
+
+.drawer-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--sp-3);
+}
+
+.drawer-row-plan {
+  grid-template-columns: 1fr 76px 1fr;
+}
+
+/* A field: its 12 px label over the input */
+.drawer-field {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+/* Inputs take the shared field skin (controls.css): only size, padding and font here */
+.drawer-input {
+  width: 100%;
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+}
+
+textarea.drawer-input {
+  display: block;
+  height: auto;
+  min-height: calc(3 * var(--lh-prose) * var(--fs-base) + 2 * var(--sp-2) + 2px); /* at least 3 lines */
+  padding: var(--sp-2);
+  font-size: var(--fs-base);
+  line-height: var(--lh-prose);
+  resize: vertical;
+}
+
+/* The title: a 16 px heading with no box until hovered (a field box) or focused (accent border and the focus ring).
+   (0,2,0) so it beats .drawer-input's size and font. */
+.drawer-name .drawer-title {
+  height: var(--control-h-lg);
+  padding: 0 7px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-ui);
+  text-overflow: ellipsis;
+}
+
+.drawer-name .drawer-title:hover {
+  border-color: var(--border-strong);
+  border-bottom-color: var(--field-edge);
+}
+
+.drawer-name .drawer-title:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+/* A value that can't be changed here: the same box as an input, filled, without a border (the tooltip says why) */
+.drawer-static {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: var(--control-h);
+  min-width: 0;
+  padding: 0 var(--sp-2);
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.drawer-static svg {
+  flex: none;
+  color: var(--text-3);
+}
+
+/* An input with its unit: Duration "5 d", lag "+1 d" */
+.days-input {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+}
+
+.drawer-value {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer-empty {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
+}
+
+/* Footer: Delete task (danger) at the left, Done (primary) at the right */
+.drawer-foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* Progress: the 0–100 steps (segmented look, Grid.css), the slider and its value */
+.drawer-progress .progress-slider > span {
+  min-width: 4ch;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.progress-hint {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+/* Predecessors and successors */
+.pred-list,
+.succ-list {
+  display: grid;
+  gap: var(--sp-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-md);
+}
+
+/* A link: "#11" · name · type · lag · remove */
+.pred-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h);
+}
+
+.pred-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  line-height: var(--lh-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pred-id {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.pred-type {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+/* Type and lag: 28 px boxes in the shared field skin */
+.pred-list select,
+.lag-input {
+  height: var(--control-h-sm);
+  font-size: var(--fs-sm);
+}
+
+.pred-list select {
+  padding: 0 2px 0 var(--sp-1);
+}
+
+.lag-input {
+  width: 44px;
+  padding: 0 6px;
+  text-align: right;
+}
+
+.pred-invalid {
+  color: var(--late-text);
+}
+
+.pred-invalid > span {
+  flex: 1;
+  min-width: 0;
+  line-height: var(--lh-ui);
+}
+
+/* "FS = start after it finishes · …": one quiet line under the list */
+.pred-help {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+/* Remove a link: a 24 px ghost that turns red on hover */
+.icon-button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background-color var(--ease), color var(--ease);
+}
+
+.icon-button:hover {
+  background: var(--late-soft);
+  color: var(--late-text);
+}
+
+.add-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.succ-list .btn-link {
+  line-height: var(--lh-ui);
+  text-align: left;
+}
+
+/* Predecessor picker: a search field over a list of 30 px rows */
+.picker {
+  margin-top: var(--sp-2);
+}
+
+.picker input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+}
+
+.picker-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* long names end in an ellipsis instead of widening the list */
+  max-height: 200px;
+  margin: var(--sp-1) 0 0;
+  padding: 2px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  font-size: var(--fs-md);
+  list-style: none;
+}
+
+.picker-list button {
+  display: block;
+  width: 100%;
+  height: 30px;
+  padding: 0 var(--sp-2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text);
+  font-size: var(--fs-md);
+  line-height: var(--lh-ui);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.picker-list button:hover:not(:disabled),
+.picker-list button.picker-active:not(:disabled) {
+  background: var(--selected);
+}
+
+/* The highlighted row when it can't be picked (an exact ID that is already linked or would loop) */
+.picker-list button.picker-active:disabled {
+  background: var(--surface-2);
+}
+
+.picker-list button:disabled,
+.picker-list button:disabled .pred-id {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.picker-list .drawer-empty {
+  padding: var(--sp-1) var(--sp-2);
+}
+
+/* A major task's calculated values (§7.9): label and value pairs */
+.drawer-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--sp-1) var(--sp-3);
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer-facts dt {
+  color: var(--text-3);
+}
+
+.drawer-facts dd {
+  margin: 0;
+}

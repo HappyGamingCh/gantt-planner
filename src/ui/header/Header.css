@@ -1,0 +1,281 @@
+/* App header (SPEC §7.4): a fixed 60 px (--header-h), so the KPI strip below never moves (with or without the
+   "Today is" hint, in either mode).
+   Two rows on the right: every control (mode switch, status date, issues, Open, Save, Report, More) shares one 32 px
+   row at y 4–36, and the captions under it ("Baseline locked", "Today is 31 Oct") make a second row at y 38–54. The
+   left block follows the same two rows: the project name is level with the controls (centre y 19) and the file chip
+   with the captions (centre y 45). The hint coming or going never moves a control. */
+.header {
+  display: grid;
+  /* The actions never shrink below their content; the project name gives way (ellipsis) at 1280 px and below. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--header-h);
+  padding: 0 var(--sp-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+/* --- left: mark, project name, file chip --- */
+.header-title {
+  display: flex;
+  align-self: start;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-top: var(--sp-2);
+}
+
+.header-name {
+  min-width: 0;
+}
+
+/* No overflow clip here: the name button ellipsises itself, and a clip would cut its hover halo */
+.header-name h1 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.name-button {
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+  transition: background-color var(--ease), box-shadow var(--ease);
+}
+
+/* "Click to rename": a soft halo instead of an underline (the halo bleeds 4 px, so the text doesn't move) */
+.name-button:hover {
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+  box-shadow: 0 0 0 4px var(--surface-2);
+  text-decoration: none;
+}
+
+/* Skin from controls.css (field); here only size and type. The -3 px margins keep the 28 px field in the name's
+   22 px line, so the file chip doesn't move (or leave the header) while renaming. */
+.name-input {
+  width: 100%;
+  height: var(--control-h-sm);
+  margin: -3px 0;
+  padding: 0 var(--sp-1);
+  border-color: var(--accent);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0; /* onto the caption row (y 36–54) */
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
+  white-space: nowrap;
+}
+
+.file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Unsaved changes (--risk as a graphic on white only: 3.19:1) */
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--risk);
+}
+
+.file-state-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  text-decoration: underline dotted var(--text-3);
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.file-state-link:hover {
+  color: var(--text);
+}
+
+/* --- centre: mode switch (§7.4). 32 + 2 + 16 = 50 px inside the 60 px header --- */
+.mode-switch {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  align-items: center;
+  gap: 2px;
+  margin-top: var(--sp-1);
+}
+
+.segmented-mode button {
+  padding: 0 14px;
+}
+
+/* Plan, lit: violet ring and label (4.77:1 ring vs the track; 7.10:1 text) instead of the blue */
+.mode-switch-plan .segmented button[aria-checked='true'] {
+  color: var(--plan);
+  box-shadow: inset 0 0 0 1px var(--plan-edge), var(--shadow-xs);
+}
+
+.mode-caption {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 16px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.mode-caption svg {
+  flex: none;
+}
+
+.mode-caption-plan {
+  background: var(--plan-soft);
+  color: var(--plan);
+}
+
+/* --- right: status date, issues, Open, Save, Report, More --- */
+.header-actions {
+  display: flex;
+  align-self: start;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+/* Label, date, Today on one row; "Today is 31 Oct" under them, right-aligned: 32 + 2 + 14 = 48 px */
+.status-date {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  column-gap: var(--sp-2);
+  row-gap: 2px;
+  margin-right: var(--sp-1);
+}
+
+.status-date-label {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Skin from controls.css (field); here only size and type */
+.status-date-input {
+  height: var(--control-h);
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.status-date-value {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.status-date .btn-link {
+  height: var(--control-h-sm);
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--ease);
+}
+
+.status-date .btn-link:hover:not(:disabled) {
+  background: var(--accent-softer);
+  text-decoration: none;
+}
+
+.status-date .btn-link:disabled {
+  background: none;
+  color: var(--text-disabled);
+}
+
+.status-date-hint {
+  grid-column: 1 / -1;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 14px;
+  text-align: right;
+}
+
+/* Issues badge: a pill, red with errors, amber with warnings only */
+.issues-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 var(--sp-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow var(--ease);
+}
+
+/* The 24 px pill centred on the 32 px control row */
+/* Print Gantt (§9.4): its name, or below 1100 px its printer icon, so the name and file chip keep their room */
+.header-print > svg {
+  display: none;
+}
+
+@media (max-width: 1099px) {
+  .header-print {
+    width: var(--control-h);
+    padding: 0;
+  }
+
+  .header-print > svg {
+    display: block;
+  }
+
+  .header-print-label {
+    display: none;
+  }
+}
+
+.header-actions > .issues-badge {
+  margin-top: var(--sp-1);
+}
+
+.issues-badge:hover {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.issues-badge-warning {
+  background: var(--risk-soft);
+  color: var(--risk-text);
+}
+
+.issues-badge-error {
+  background: var(--late-soft);
+  color: var(--late-text);
+}

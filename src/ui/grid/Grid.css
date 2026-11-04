@@ -1,0 +1,694 @@
+.grid {
+  display: grid;
+  min-width: 100%;
+  font-size: var(--fs-md);
+}
+
+.grid-head,
+.grid-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+/* The header band uses --head-bg: --surface-2, or the faint Plan-mode violet (tokens.css, .main.mode-plan). Its
+   --border-strong rule lines up with the timeline's: the timeline is --timeline-h of SVG plus its 1 px rule, and this
+   box includes its rule (border-box), so it is 1 px taller to keep every row line level across the splitter. */
+.grid-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: calc(var(--timeline-h) + 1px);
+  background: var(--head-bg);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.grid-row {
+  height: var(--row-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+  user-select: none;
+}
+
+/* Row hover is RowHover's (src/ui/main): one rule for the row in both panes, held while a bar is dragged. */
+
+/* §7.7 A major task's row: a faint band (hover and selection still show over it). */
+.grid-row.row-summary {
+  background: var(--summary-band);
+}
+
+.grid-row.selected {
+  background: var(--selected);
+}
+
+/* Status elements on a selected row sit on white, so they keep their shape against the blue (audit item 130). */
+.grid-row.selected .status-chip.st-progress,
+.grid-row.selected .new-tag {
+  background: var(--surface);
+}
+
+.grid-row.selected .cell:first-child {
+  box-shadow: inset 2px 0 var(--accent);
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 var(--sp-2);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Long headers wrap onto two lines ("Forecast / Finish"), so the columns can be as narrow as their values. */
+.grid-head .cell {
+  align-items: flex-end;
+  padding-bottom: 6px;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.cell-sticky {
+  position: sticky;
+  z-index: 1;
+  background: inherit;
+}
+
+/* The freeze line (Excel's freeze pane): right of the Task column, in the header and the body */
+.grid-head .cell-sticky:nth-child(2),
+.grid-row .cell-sticky:nth-child(2) {
+  border-right: 1px solid var(--border-strong);
+}
+
+.cell-right {
+  justify-content: flex-end;
+}
+
+/* ID: small, readable grey, right-aligned (room for "200" at 12 px in the 40 px column) */
+.grid-head .cell:first-child,
+.grid-row .cell:first-child {
+  padding-right: 10px;
+  padding-left: var(--sp-1);
+}
+
+.grid-row .cell:first-child {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+
+/* Numbers and dates line up from row to row */
+.grid-row .cell:is([data-col='id'], [data-col='duration'], [data-col='start'], [data-col='finish'], [data-col='progress'],
+  [data-col='actualStart'], [data-col='actualFinish'], [data-col='actualDuration'], [data-col='forecastStart'],
+  [data-col='forecastFinish'], [data-col='variance']) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Calculated, or locked in this mode: grey text (the cell's tooltip says why) */
+.cell-calc,
+.cell-locked {
+  color: var(--text-2);
+}
+
+/* A cell that can be typed in shows a hairline box on hover, the Excel way (both modes). */
+.pane-grid .grid-row .cell[aria-readonly='false']:not(.cell-active):not(.cell-editing):hover {
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+/* Only the name shrinks: the late dot and the "New" tag stay whole beside it. Line height for Thai marks. */
+.task-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--lh-ui);
+}
+
+.late-dot {
+  display: inline-block;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin: 0 var(--sp-2) 1px 0;
+  border-radius: 50%;
+  background: var(--late);
+  vertical-align: middle;
+}
+
+.linked,
+.flagged {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.linked svg {
+  color: var(--text-3);
+}
+
+.text-late {
+  color: var(--late-text);
+  font-weight: var(--fw-medium);
+}
+
+.text-early {
+  color: var(--done-text);
+}
+
+.text-muted {
+  color: var(--text-3);
+}
+
+/* Assignee chips: only whole chips are shown (cells.tsx); a lone first tag may end with an ellipsis. */
+.chips {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.chips > .tag:first-child {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* The Assigned column: 6 px padding a side (columns.tsx CHIPS_PADDING), so two short tags fit whole */
+.cell-chips {
+  padding-inline: 6px;
+}
+
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--text-inverse);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+/* A light resource colour (contrast.ts): the plain colour with dark initials and a faint ring. */
+.avatar-light {
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 18%, transparent);
+}
+
+/* Team, contractor or unknown (audit item 131): a neutral white tag with a square swatch in the resource colour. It stays white
+   on hover and selected rows, so the swatch keeps >= 3:1. Its widths are TAG_EXTRA in cells.tsx. */
+.tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  max-width: 100%;
+  height: 20px;
+  padding: 0 5px 0 var(--sp-1);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 18px;
+}
+
+.tag-swatch {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.tag-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--lh-ui);
+}
+
+.chip-more {
+  flex: none;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* Status pill (§3.3 pill recipe) with a faint ring in its own colour, so it keeps its shape on a hover row */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.status-chip.st-completed {
+  background: var(--done-soft);
+  color: var(--done-text);
+}
+
+.status-chip.st-progress {
+  background: var(--progress-soft);
+  color: var(--progress-text);
+}
+
+.status-chip.st-late {
+  background: var(--late-soft);
+  color: var(--late-text);
+}
+
+.status-chip.st-idle {
+  background: var(--idle-soft);
+  color: var(--text-2);
+}
+
+.progress-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.mini-bar {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+}
+
+.mini-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+/* Wide enough for "100%", so every row's bar ends at the same place */
+.progress-pct {
+  flex: none;
+  min-width: 4.5ch;
+  text-align: right;
+}
+
+.mini-fill.st-completed {
+  background: var(--done);
+}
+
+.mini-fill.st-progress {
+  background: var(--progress);
+}
+
+.mini-fill.st-late {
+  background: var(--late);
+}
+
+.mini-fill.st-idle {
+  background: var(--idle);
+}
+
+/* Editing (M3). The active cell shows where the keyboard is; until there is one, the grid itself shows focus. */
+.grid:focus-visible {
+  outline: none;
+}
+
+.grid:focus-visible:not(:has(.cell-active)) {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.cell {
+  scroll-margin-top: calc(var(--timeline-h) + 1px); /* clear of the sticky header and its rule */
+}
+
+/* Scrolled into view clear of the sticky ID and Task columns (--sticky-w is set by Grid.tsx), not under them. */
+.grid-row .cell:not(.cell-sticky) {
+  scroll-margin-left: var(--sticky-w, 0px);
+}
+
+.cell-active {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.grid-row.selected .cell-active:first-child {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.cell-locked {
+  cursor: not-allowed;
+}
+
+.cell-editing {
+  padding: 0;
+  overflow: visible;
+}
+
+/* Progress edits in a popover: the cell keeps its mini bar and the draft percent, laid out as when not editing. */
+.cell-editing:has(> .progress-cell) {
+  padding: 0 var(--sp-2);
+  overflow: hidden;
+}
+
+.cell-input {
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--sp-2);
+  border: 2px solid var(--accent);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-md);
+  outline: none;
+}
+
+.cell-invalid {
+  border-color: var(--late);
+  text-decoration: underline wavy var(--late);
+}
+
+/* Date and Remarks editors may grow past their cell, over the neighbours (date columns and Remarks are never sticky). */
+.cell-editing:has(> .cell-input-date),
+.cell-editing:has(> .cell-textarea) {
+  position: relative;
+  z-index: 1; /* above the sticky ID and Task cells when the grid is scrolled sideways */
+}
+
+/* A native date input needs ~140 px (its width follows the Windows date format): it grows leftwards, so the year is
+   never cut, even against the splitter. */
+.cell-input-date {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: auto;
+  min-width: 100%;
+  padding-right: var(--sp-1);
+}
+
+/* Remarks: one line like an input; with line breaks it grows down over the rows below (up to 6 lines). */
+.cell-textarea {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: auto;
+  min-height: 100%;
+  padding-block: calc((var(--row-h) - 22px) / 2); /* 18 px line + 2 × 2 px border, centred like an input */
+  overflow: hidden;
+  font-family: inherit;
+  line-height: 18px;
+  resize: none;
+}
+
+.cell-hint,
+.cell-pop {
+  position: fixed;
+  z-index: 45;
+  max-width: 300px;
+  box-shadow: var(--shadow-2);
+}
+
+.cell-hint {
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--late-soft);
+  color: var(--late-text);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
+}
+
+/* Not an error: says how the value will be saved (e.g. a rounded duration). */
+.cell-hint-note {
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+.cell-pop {
+  width: 280px;
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.cell-pop-hint {
+  margin: var(--sp-2) 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.cell-pop-error {
+  color: var(--late-text);
+}
+
+/* "New" after the name (grid and drawer head): a small blue-tinted tag; white on a selected row (above) */
+.new-tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 18px;
+  margin-left: var(--sp-2);
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  background: var(--accent-soft);
+  color: var(--progress-text);
+  font: var(--fw-semibold) var(--fs-xs) / 18px var(--font);
+  white-space: nowrap;
+}
+
+/* Progress steps (grid popover and drawer): the segmented look of the zoom control (controls.css .segmented) */
+.progress-steps {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius);
+  background: var(--surface-3);
+}
+
+.step {
+  flex: 1;
+  height: var(--control-h-sm);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color var(--ease), color var(--ease), box-shadow var(--ease);
+}
+
+.step:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+
+.step:focus-visible {
+  outline-offset: 1px;
+}
+
+.step-on,
+.step-on:hover {
+  background: var(--surface);
+  color: var(--accent-text);
+  box-shadow: inset 0 0 0 1px var(--accent), var(--shadow-xs);
+}
+
+.progress-slider {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+.progress-slider input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+/* The typed percent next to the slider (grid popover). */
+.progress-number {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px; /* clear of the number box's focus ring */
+}
+
+/* Field skin, focus and invalid edges come from controls.css; only the size here. */
+.progress-slider .progress-number input {
+  flex: none;
+  width: 48px;
+  height: var(--control-h-sm);
+  padding: 0 var(--sp-1);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Assignee chip editor (grid popover and drawer): the field skin (controls.css) at the drawer's 32 px */
+.assignee-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--control-h);
+  padding: 3px var(--sp-1);
+}
+
+.assignee-input input {
+  flex: 1;
+  min-width: 80px;
+  height: 24px;
+  padding: 0 var(--sp-1);
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: var(--fs-md);
+}
+
+/* A chosen name in the editor: grey tag, no swatch, with its × */
+.tag-edit {
+  gap: 2px;
+  max-width: none;
+  padding: 0 2px 0 6px;
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+
+.tag-edit button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--ease), color var(--ease);
+}
+
+.tag-edit button:hover {
+  background: var(--late-soft);
+  color: var(--late-text);
+}
+
+/* Inside the tag's clipping box: the focus ring is drawn inside the button */
+.tag-edit button:focus-visible {
+  outline-offset: -2px;
+}
+
+/* §7.7 Outline: the slot indents a row by its Level (margin set inline) and holds a major task's chevron. It shows
+   only while the plan has major tasks, so a flat plan looks as before. */
+.grid {
+  position: relative;
+}
+
+.outline-slot {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: var(--sp-1);
+}
+
+.grid-outline .outline-slot {
+  display: inline-flex;
+}
+
+.outline-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.outline-toggle:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.task-summary {
+  font-weight: var(--fw-semibold);
+}
+
+.task-count {
+  flex: none;
+  margin-left: var(--sp-2);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* §7.7 Moving rows: the grip left of the ID shows on hover; the rows being moved fade; a line shows where they go. */
+.row-grip {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  display: inline-flex;
+  color: var(--text-3);
+  opacity: 0;
+  cursor: grab;
+  transform: translateY(-50%);
+}
+
+.pane-grid .grid-row:hover .row-grip {
+  opacity: 1;
+}
+
+.grid-row.row-dragging {
+  opacity: 0.45;
+}
+
+.row-drop-line {
+  position: absolute;
+  right: 0;
+  z-index: 3;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.row-drop-line::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -4px;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+body.row-dragging-on,
+body.row-dragging-on * {
+  cursor: grabbing !important;
+}

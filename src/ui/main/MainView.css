@@ -1,0 +1,95 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 960px;
+}
+
+/* Under the report (§9.1); `display: flex` above would otherwise override the hidden attribute. */
+.main[hidden] {
+  display: none;
+}
+
+/* "Skip to task grid": off screen until a keyboard user tabs to it (§10). */
+.skip-link {
+  position: fixed;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: 50;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+  transform: translateY(calc(-100% - var(--sp-4)));
+}
+
+/* The shadow only while shown: off screen, --shadow-2 (24 px blur) would still bleed into the header */
+.skip-link:focus {
+  box-shadow: var(--shadow-2);
+  transform: none;
+}
+
+.workspace {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--surface);
+}
+
+.pane {
+  min-height: 0;
+}
+
+/* Both panes always show a horizontal scrollbar, so their visible heights match while scrolling. */
+.pane-grid {
+  flex: none;
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+
+.pane-gantt {
+  flex: 1;
+  min-width: 0;
+  overflow-x: scroll;
+  overflow-y: auto;
+}
+
+/* Above the sticky grid header and timeline (z 2), so its grab zone reaches over them; under the drawer and Issues
+   panel (20), menus and toasts. At rest a groove (a light fill between two hairlines), not a grey band. */
+.splitter {
+  position: relative;
+  z-index: 3;
+  flex: none;
+  width: 5px;
+  background: var(--surface-2);
+  box-shadow: inset 1px 0 var(--border), inset -1px 0 var(--border);
+  cursor: col-resize;
+  touch-action: none;
+  transition: background-color var(--ease), box-shadow var(--ease);
+}
+
+/* A 13 px grab zone around the 5 px line, easier to hit with a touchpad. */
+.splitter::before {
+  content: '';
+  position: absolute;
+  inset: 0 -4px;
+}
+
+.splitter:hover,
+.splitter:focus-visible,
+.splitter.dragging {
+  background: var(--accent);
+  box-shadow: none;
+  outline: none;
+}
+
+.no-match {
+  margin: var(--sp-6) var(--sp-4);
+  color: var(--text-3);
+  font-size: var(--fs-md);
+}

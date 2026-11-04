@@ -1,0 +1,202 @@
+/* Toolbar (SPEC §7.6): Office-ribbon look. "+ Add task" is the only filled button and the zoom control the only boxed
+   group; the tool buttons are ghosts (.btn-quiet: no box until hovered); dividers separate history | edit | view. */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: var(--toolbar-h);
+  padding: 0 var(--sp-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Buttons keep their size in a narrow window (icon buttons would squeeze to their icon); the search box gives way */
+.toolbar > .btn,
+.toolbar > .menu,
+.toolbar > .segmented {
+  flex: none;
+}
+
+.toolbar > .btn-primary {
+  margin-right: var(--sp-1);
+}
+
+/* Undo / Redo with nothing to undo, and disabled ghosts: pale, no box, still focusable (aria-disabled) */
+.toolbar .btn[aria-disabled='true'],
+.toolbar .btn[aria-disabled='true']:hover {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* After Undo / Redo, and before the zoom control */
+.toolbar-divider {
+  flex: none;
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--sp-2);
+  background: var(--border);
+}
+
+/* A filter is on: Filter stays tinted (and shows its count) with its panel closed */
+.toolbar .btn-quiet:has(.count-badge) {
+  background: var(--accent-softer);
+  color: var(--accent-text);
+}
+
+.toolbar .btn-quiet:has(.count-badge):hover,
+.toolbar .menu > .btn-quiet[aria-expanded='true']:has(.count-badge) {
+  background: var(--accent-soft);
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+/* Below 1100px Delete, Filter and Columns show their icons only, so the toolbar fits down to the 960px minimum; Plan
+   mode, with Link and Unlink too, needs 1182px for every label, so there it is below 1240px. The label stays for
+   screen readers (Filter and Columns are named by their text) and the title names the button; Filter keeps its count. */
+@media (max-width: 1099px) {
+  .toolbar .toolbar-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .toolbar .btn:has(> .toolbar-label) {
+    min-width: 32px;
+    padding: 0 var(--sp-2);
+  }
+}
+
+@media (max-width: 1239px) {
+  .toolbar-plan .toolbar-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .toolbar-plan .btn:has(> .toolbar-label) {
+    min-width: 32px;
+    padding: 0 var(--sp-2);
+  }
+}
+
+/* Search: an outlined field (skin from controls.css) with the icon and a "/" key hint inside */
+.search {
+  display: flex;
+  flex: 0 1 220px;
+  align-items: center;
+  gap: 6px;
+  min-width: 110px;
+  height: var(--control-h);
+  padding: 0 var(--sp-2);
+  color: var(--text-3);
+}
+
+.search input {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-md);
+}
+
+.search-kbd {
+  display: none;
+  flex: none;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-3);
+  font: var(--fw-medium) var(--fs-xs) / 16px var(--font);
+  text-align: center;
+}
+
+.search:not(:focus-within):has(input:placeholder-shown) .search-kbd {
+  display: inline-block;
+}
+
+.count-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+
+/* The popover panel rules (.popover, .filter-panel, .filter-names, .check) live in common/controls.css (shared with
+   the report Options popover and Project settings). */
+
+/* Active filters as removable chips (§7.6) */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 36px;
+  padding: var(--sp-1) var(--sp-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
+}
+
+.filter-chips-label {
+  color: var(--text-3);
+}
+
+/* An assignee name may be Thai: 1.5 line box */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 24px;
+  padding: 0 var(--sp-1) 0 10px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--progress-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-ui);
+  white-space: nowrap;
+}
+
+/* "Late · 3 tasks, 1 milestone": the split in the chip's colour (--progress-text on --accent-soft), regular weight */
+.filter-chip-detail {
+  font-weight: var(--fw-regular);
+}
+
+.filter-chip button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.filter-chip button:hover {
+  background: var(--surface);
+}

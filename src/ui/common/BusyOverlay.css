@@ -1,0 +1,40 @@
+/* Opening another file (§7.11): covers the plan on screen and swallows clicks; toasts stay on top. No spinner (§7.2). */
+.busy-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 38;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* a long file name ellipsises inside the window */
+  place-items: center;
+  padding: var(--sp-6);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  cursor: progress;
+}
+
+.busy-overlay:focus {
+  outline: none;
+}
+
+/* The message on a white card, so it reads over the dimmed grid and bars. */
+.busy-card {
+  max-width: min(560px, 100%);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-5);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  color: var(--text-2);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media print {
+  .busy-overlay {
+    display: none;
+  }
+}

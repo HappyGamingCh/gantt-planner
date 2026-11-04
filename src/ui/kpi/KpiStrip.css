@@ -1,0 +1,268 @@
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.kpis-plan {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+/* One card anatomy in both modes and on report page 1 (§7.5): LABEL · value + state pill · caption · mini bar on the
+   card's bottom edge, so the bars of all cards line up. Cards are separated by inset hairlines. */
+.kpi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 10px var(--sp-4) 12px;
+}
+
+.kpi + .kpi::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.kpi-label {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* Latin-only figures: a tight line box. The pill sits centred on the figure; it wraps under it if the card is narrow. */
+.kpi-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--sp-2);
+  row-gap: 2px;
+  margin-top: 2px;
+  font-size: var(--fs-kpi);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* Report page 1: the cards are narrower than in the app, so every state pill sits under its value (never beside it on
+   one card and under it on the next). The bars stay on the cards' bottom edge. */
+.report-kpis .kpi-value {
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: var(--sp-1);
+}
+
+.kpis-plan .kpi {
+  padding-block: var(--sp-2);
+}
+
+.kpis-plan .kpi-value {
+  font-size: var(--fs-xl);
+}
+
+.kpi-caption {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* One status language: pills (soft fill + strong text). The "on time" chip stays neutral (no state class). */
+.kpi-state,
+.kpi-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 18px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+:is(.kpi-state, .kpi-chip).kpi-good {
+  background: var(--done-soft);
+  color: var(--done-text);
+}
+
+:is(.kpi-state, .kpi-chip).kpi-risk {
+  background: var(--risk-soft);
+  color: var(--risk-text);
+}
+
+:is(.kpi-state, .kpi-chip).kpi-bad {
+  background: var(--late-soft);
+  color: var(--late-text);
+}
+
+/* Mini bar: on the card's bottom edge (margin-top: auto), at least 8 px under what comes before it */
+.kpi-bar {
+  position: relative;
+  display: flex;
+  height: 4px;
+  margin-top: auto;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+}
+
+.kpi > :has(+ .kpi-bar) {
+  margin-bottom: var(--sp-2);
+}
+
+/* The Progress bar lets its plan tick stand out above and below it; the stacked Tasks bar keeps its clip */
+.kpi-bar:not(.kpi-stack) {
+  overflow: visible;
+}
+
+.kpi-fill {
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.kpi-fill-time {
+  background: var(--idle);
+}
+
+/* The plan tick: 10 px tall over the 4 px bar (14.94:1 against the track) */
+.kpi-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--text);
+}
+
+.kpi-stack span {
+  height: 100%;
+}
+
+/* Order: done, in progress, late, not started (= the empty track) */
+.kpi-stack .st-completed {
+  background: var(--done);
+}
+
+.kpi-stack .st-progress {
+  background: var(--progress);
+}
+
+.kpi-stack .st-late {
+  background: var(--late);
+}
+
+.kpi-stack .st-idle {
+  background: transparent;
+}
+
+/* Cards with an explanation in their tooltip (§7.5) */
+.kpi[title] {
+  cursor: help;
+}
+
+.kpi abbr {
+  text-decoration: none;
+}
+
+/* "N late" in the main view: a pill that toggles the Late filter; solid red with white text while it is on (4.83:1) */
+.kpi-link {
+  margin-left: 0;
+  border: 0;
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 18px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--ease), color var(--ease), box-shadow var(--ease);
+}
+
+.kpi-link:hover {
+  box-shadow: inset 0 0 0 1px var(--late);
+}
+
+.kpi-link[aria-pressed='true'] {
+  background: var(--late);
+  color: var(--text-inverse);
+}
+
+/* Collapse chevron (§7.3): main view only, never on the report. The strip keeps its own room at the right end, so a
+   long last card ("Day 12 of 25") never runs under it. */
+.kpis-main {
+  position: relative;
+  padding-right: 40px;
+}
+
+.kpis-main .kpi-toggle {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  width: 28px;
+  height: 28px;
+}
+
+/* One line: each card as wide as its content, the spare room shared out */
+.kpis-collapsed {
+  display: flex;
+}
+
+.kpis-collapsed .kpi,
+.kpis-plan.kpis-collapsed .kpi {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.kpis-collapsed .kpi + .kpi::before {
+  top: var(--sp-2);
+  bottom: var(--sp-2);
+}
+
+/* As tall as a collapsed pill in both modes, so the one-line strip is the same height in Plan and Track */
+.kpis-collapsed .kpi-value,
+.kpis-plan.kpis-collapsed .kpi-value {
+  flex-wrap: nowrap;
+  min-height: 20px;
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: var(--fs-base);
+  letter-spacing: 0;
+}
+
+/* One line: smaller pills (20 px) */
+.kpis-collapsed :is(.kpi-state, .kpi-chip) {
+  height: 20px;
+  font-size: var(--fs-xs);
+}
+
+.kpis-collapsed .kpi-caption,
+.kpis-collapsed .kpi-bar {
+  display: none;
+}
+
+.kpis-collapsed .kpi-toggle {
+  top: 50%;
+  transform: translateY(-50%);
+}

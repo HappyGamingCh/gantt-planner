@@ -1,0 +1,184 @@
+/* Print Gantt (SPEC §9.4): the report's sheets, toolbar and print rules (Report.css) hold a table and a chart per page.
+   Row height, the header heights and the legend's padding set the pagination (printLayout.ts): change them together. */
+.print-notes {
+  margin: 0 0 0 var(--sp-3);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A sheet wider than the window still scrolls into view from its left edge */
+.gantt-print .report-pages {
+  align-items: safe center;
+}
+
+/* An A3 sheet on screen, at three quarters so a 1280 px window shows it whole. Print takes the size from @page. */
+@media screen {
+  .report-page.paper-a3 {
+    width: 420mm;
+    min-height: 297mm;
+    zoom: 0.75;
+  }
+}
+
+.print-gantt {
+  display: flex;
+}
+
+/* The table, with the grid's darker "freeze" rule between it and the chart (§7.7) */
+.print-table {
+  flex: none;
+  border-right: 1px solid var(--border-strong);
+  font-size: var(--fs-xs);
+}
+
+/* The timeline's band and rule (--head-bg is the neutral grey here: the view sits outside .main) */
+.print-head {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: var(--sp-1);
+  background: var(--head-bg);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-2);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+}
+
+/* Headers may wrap onto two lines ("Planned Start") */
+.print-head .print-cell {
+  white-space: normal;
+}
+
+.print-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+/* A major task's row: the grid's band (§7.7) */
+.print-summary {
+  background: var(--summary-band);
+}
+
+.print-cell {
+  flex: none;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 var(--sp-1);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.print-right {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+/* One clipped line that can be Thai (§3.7): the 1.5 line box keeps stacked tone marks */
+.print-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--lh-ui);
+}
+
+.print-id {
+  color: var(--text-3);
+}
+
+.print-summary .print-name {
+  font-weight: var(--fw-semibold);
+}
+
+.print-count {
+  flex: none;
+  margin-left: var(--sp-1);
+  color: var(--text-3);
+}
+
+/* Colour by assignee: the bar's colour before the names */
+.print-swatch {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--sp-1);
+  border-radius: 2px;
+}
+
+.print-status.st-completed {
+  color: var(--done-text);
+}
+
+.print-status.st-progress {
+  color: var(--progress-text);
+}
+
+.print-status.st-late {
+  color: var(--late-text);
+}
+
+.print-status.st-idle {
+  color: var(--text-2);
+}
+
+.print-chart {
+  flex: none;
+}
+
+.print-chart .timeline {
+  position: static;
+}
+
+/* Block, not inline: an inline <svg> leaves a descender gap under it, which would push the legend down */
+.print-chart > svg {
+  display: block;
+}
+
+/* Under the chart on every page; wraps onto more lines when needed (its height is measured, GanttPrint.tsx) */
+.print-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--sp-3);
+  padding-top: var(--sp-1);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  line-height: 16px;
+  break-before: avoid;
+}
+
+.print-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  white-space: nowrap;
+}
+
+/* The legend measured off screen at the page's content width */
+.print-measure {
+  position: absolute;
+  top: 0;
+  left: -10000px;
+  visibility: hidden;
+}
+
+.print-measure.paper-a4 {
+  width: 277mm;
+}
+
+.print-measure.paper-a3 {
+  width: 400mm;
+}
+
+@media print {
+  .print-measure {
+    display: none;
+  }
+
+  .print-gantt {
+    break-inside: avoid;
+  }
+}

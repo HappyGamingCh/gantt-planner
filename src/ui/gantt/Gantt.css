@@ -1,0 +1,504 @@
+.gantt {
+  position: relative;
+  min-width: 100%;
+  font-size: var(--fs-sm);
+}
+
+.gantt svg {
+  display: block;
+  font-family: var(--font);
+}
+
+/* Timeline header: the same band as the grid header row (--head-bg: violet wash in Plan mode), with the darker
+   "freeze" rule below it (SPEC §7.8) */
+.timeline {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--head-bg);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.tl-line,
+.tl-tick {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+/* Day detail: a tick at every day boundary, Mondays one step stronger so weeks still read */
+.tl-tick.tl-week {
+  stroke: var(--border-strong);
+}
+
+/* Month names are HTML under the SVG (chips paint over them); each sticks to the left edge while its month shows */
+.timeline > svg {
+  position: relative;
+}
+
+.tl-months {
+  display: flex;
+  align-self: start;
+  overflow: clip; /* not hidden: that would make it the scroll container the sticky month names stick to */
+  pointer-events: none;
+}
+
+.tl-month-cell {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* One step stronger than the day labels, so the month anchors the header */
+.tl-month {
+  position: sticky;
+  left: 6px;
+  padding-right: var(--sp-2);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+
+/* The halo keeps a label readable where the status-date or today line runs down behind it; it is the band's own
+   colour, so it never shows as a patch in either mode. Wide enough to close the gaps inside a label (the word gap
+   after "·" in "W40 · 28 Sep" is ≈ 5 px), so a dashed line stops around it instead of leaving dash stubs that read
+   as a strike-through: 6 px here, 5 px on the 12 px bar labels (measured at 1280 and 1440 px, 1x). */
+.tl-day {
+  fill: var(--text-2);
+  font-size: var(--fs-xs);
+  dominant-baseline: central;
+  paint-order: stroke;
+  stroke: var(--head-bg);
+  stroke-width: 6px;
+  stroke-linejoin: round;
+}
+
+/* Day detail: a day number on a holiday cell takes the cell's colour as its halo */
+.tl-day-off {
+  stroke: var(--nonwork);
+}
+
+/* Day detail: the whole cell. Week and Month detail: a 4 px strip at the foot of the tier, under the week labels;
+   a transparent cell above it carries the tooltip. */
+.tl-holiday {
+  fill: var(--nonwork);
+  stroke: var(--border);
+}
+
+.tl-holiday-hit {
+  fill: transparent;
+}
+
+.tl-status rect {
+  fill: var(--accent);
+}
+
+/* Status chip: filled accent pill, white text (5.17:1). Today chip: outlined, so the two never look alike. */
+.tl-status text {
+  fill: var(--text-inverse);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  dominant-baseline: central;
+}
+
+.tl-today rect {
+  fill: var(--surface);
+  stroke: var(--text-3);
+}
+
+.tl-today text {
+  fill: var(--text-2);
+  font-size: var(--fs-xs);
+  dominant-baseline: central;
+}
+
+/* Chart body */
+.lane {
+  fill: transparent;
+}
+
+/* A major task's lane: the grid row's faint band (§7.7) */
+.lane-summary {
+  fill: var(--summary-band);
+}
+
+.lane-selected {
+  fill: var(--selected);
+}
+
+/* Weekends (§7.8): working days, a light column under the holidays and the grid lines; multiply keeps a selected or
+   hovered row band continuous through it */
+.weekends rect {
+  fill: var(--weekend-col);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* Multiply: a selected or hovered row band runs on through a holiday column, a little darker */
+.nonwork rect {
+  fill: var(--nonwork);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.grid-lines {
+  stroke: var(--border);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.grid-weeks {
+  stroke: var(--border-strong);
+}
+
+.mark {
+  cursor: default;
+}
+
+/* Labels sit above the status-date and today lines, with a halo in the lane's colour, 5 px wide so no dash stub
+   shows in a word gap ("28 Sep", "100%"; see .tl-day) */
+.bar-label {
+  fill: var(--text-2);
+  font-size: var(--fs-sm);
+  dominant-baseline: central;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.label-selected .bar-label {
+  stroke: var(--selected);
+}
+
+.label-late {
+  fill: var(--late-text);
+  font-weight: var(--fw-semibold);
+}
+
+/* Plan mode. Hovering a bar darkens it (an inline assignee colour still wins). */
+.bar-plan {
+  fill: var(--accent);
+  transition: fill var(--ease);
+}
+
+.mark:hover .bar-plan {
+  fill: var(--accent-hover);
+}
+
+.ms-plan {
+  fill: var(--text);
+}
+
+/* Track mode */
+.bar-baseline {
+  fill: var(--baseline);
+}
+
+.bar-rest {
+  stroke-width: 1;
+}
+
+.bar-rest.st-completed {
+  fill: var(--done-soft);
+  stroke: var(--done);
+}
+
+.bar-rest.st-progress {
+  fill: var(--progress-soft);
+  stroke: var(--progress);
+}
+
+.bar-rest.st-late {
+  fill: var(--late-soft);
+  stroke: var(--late);
+}
+
+.bar-rest.st-idle {
+  fill: var(--idle-soft);
+  stroke: var(--idle);
+}
+
+.bar-done.st-completed,
+.ms-track.st-completed {
+  fill: var(--done);
+}
+
+.bar-done.st-progress,
+.ms-track.st-progress {
+  fill: var(--progress);
+}
+
+.bar-done.st-late,
+.ms-track.st-late {
+  fill: var(--late);
+}
+
+.bar-done.st-idle {
+  fill: var(--idle);
+}
+
+/* A Not started milestone is hollow: shape, not only colour, says "nothing done yet" (also in the report appendix) */
+.ms-track.st-idle {
+  fill: var(--surface);
+  stroke: var(--idle);
+  stroke-width: 1.5;
+}
+
+/* On the selected lane the unfinished part of In progress and Not started bars is white, so it doesn't merge with
+   the blue lane (audit item 130); the status outline stays (5.17 / 4.76:1 against white) */
+.mark-selected .bar-rest.st-progress,
+.mark-selected .bar-rest.st-idle {
+  fill: var(--surface);
+}
+
+/* Status date: accent, 2 px, dashed. The halo under it is a 4 px white line in step with the dashes, so each dash
+   keeps a 1 px white edge where it crosses a solid bar (5.17 / 5.02 / 4.83:1 against blue / green / red). */
+.sd-halo {
+  stroke: var(--surface);
+  stroke-width: 4;
+  stroke-dasharray: 5 4;
+  pointer-events: none;
+}
+
+.sd-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  pointer-events: none;
+}
+
+.today-line {
+  stroke: var(--text-3);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+
+/* Dependency arrows */
+.link path {
+  fill: none;
+  stroke: var(--arrow);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  transition: opacity var(--ease);
+}
+
+.link .link-head {
+  fill: var(--arrow);
+  stroke: none;
+}
+
+.link-on path {
+  stroke: var(--accent);
+}
+
+.link-on .link-head {
+  fill: var(--accent);
+}
+
+.link-dim {
+  opacity: 0.4;
+}
+
+.links {
+  pointer-events: none;
+}
+
+/* Tooltip card */
+.gantt-tip {
+  position: fixed;
+  z-index: 35;
+  width: 300px;
+  padding: var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: var(--lh);
+  pointer-events: none;
+}
+
+/* Thai names: 1.5 keeps stacked tone marks clear of the line above when the title wraps */
+.tip-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-ui);
+}
+
+.tip-id {
+  margin-right: var(--sp-1);
+  color: var(--text-3);
+  font-weight: var(--fw-medium);
+}
+
+.tip-sub {
+  margin-top: 2px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.tip-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+  margin: var(--sp-2) 0 0;
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-sm);
+}
+
+.tip-facts dt {
+  color: var(--text-3);
+}
+
+.tip-facts dd {
+  margin: 0;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The status pill next to the % (the grid's .status-chip look) */
+.tip-facts .status-chip {
+  vertical-align: middle;
+}
+
+/* Late / early variance keeps its colour over the dd's --text */
+.tip-facts dd.text-late {
+  color: var(--late-text);
+}
+
+.tip-facts dd.text-early {
+  color: var(--done-text);
+}
+
+/* Header corner: Color by, Critical path (§7.6). Sticks to the visible right edge while the chart scrolls, in the
+   top (month) tier only, so day numbers, week labels and holidays are never covered. */
+.timeline {
+  display: grid;
+}
+
+.timeline > * {
+  grid-area: 1 / 1;
+}
+
+.gantt-corner {
+  position: sticky;
+  right: 0;
+  justify-self: end;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: calc(var(--timeline-h) / 2);
+  padding: 0 var(--sp-1) 0 var(--sp-3);
+  background: var(--head-bg);
+  box-shadow: -12px 0 8px -4px var(--head-bg);
+}
+
+/* Outlined secondary buttons (they sit on a tinted band; ghosts would vanish). Color by ≠ Status = .btn-active,
+   Critical on = .btn-toggle[aria-pressed=true] (controls.css). */
+.gantt-corner .btn {
+  height: 20px;
+  padding: 0 var(--sp-2);
+  gap: var(--sp-1);
+  font-size: var(--fs-xs);
+}
+
+.gantt-corner .btn-icon {
+  width: 24px;
+  padding: 0;
+}
+
+/* Critical path: a 2 px ring 2 px clear of the bar (bars.tsx), so a band of lane colour separates it from warm
+   assignee colours */
+.crit-ring {
+  fill: none;
+  stroke: var(--late);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.link-critical path {
+  stroke: var(--late);
+}
+
+.link-critical .link-head {
+  fill: var(--late);
+}
+
+/* Drag (Plan mode) */
+.gantt-chart {
+  user-select: none;
+}
+
+.movable {
+  cursor: grab;
+  touch-action: none; /* a touch drag moves the bar instead of panning the chart (and cancelling the drag) */
+}
+
+.bar-handle {
+  fill: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.mark-dragged {
+  opacity: 0.45;
+}
+
+.drag-ghost {
+  fill: var(--accent);
+  fill-opacity: 0.18;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.dragging-move,
+.dragging-move * {
+  cursor: grabbing;
+}
+
+.dragging-resize,
+.dragging-resize * {
+  cursor: ew-resize;
+}
+
+.drag-tip {
+  width: auto;
+  max-width: 260px;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+.drag-tip .tip-sub {
+  display: block;
+}
+
+/* Major tasks (§7.8): the bar and its end caps; Track mode outlines the part not done yet */
+.bar-summary {
+  fill: var(--summary);
+}
+
+.bar-summary-rest {
+  fill: var(--summary-soft);
+  stroke: var(--summary);
+  stroke-width: 1;
+}
+
+/* Weekends in the timeline's day numbers (§7.8): a light cell, the number in --weekend-text */
+.tl-weekend {
+  fill: var(--weekend);
+}
+
+.tl-day.tl-day-weekend {
+  fill: var(--weekend-text);
+  stroke: var(--weekend); /* the halo takes the cell's colour, as on a holiday */
+}

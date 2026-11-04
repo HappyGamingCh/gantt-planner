@@ -1,0 +1,84 @@
+/* Design tokens (SPEC §7.2). The only place in src/ui and src/styles with literal colours. Contrast figures are WCAG 2.x
+   ratios against white unless stated; scratchpad design/contrast-final.mjs reproduces every one. */
+:root {
+  /* surfaces: white work areas on a cool off-white page; -2 = hover, header bands, read-only fills; -3 = tracks, pressed */
+  --bg: #F6F7F9;          --surface: #FFFFFF;      --surface-2: #F1F3F6;
+  --surface-3: #E8EBF0;   /* new: mini-bar and KPI tracks, segmented track, pressed buttons, count pills */
+  --border: #E3E6EB;      --border-strong: #CBD2DB;
+  --field-edge: #848FA2;  /* new: bottom edge of text/date/number/select fields, field hover (3.27:1, WCAG 1.4.11) */
+  --selected: #DBEAFE;    /* new: selected grid row and Gantt lane (same value as --accent-soft, its own meaning) */
+  /* text */
+  --text: #0F172A;        --text-2: #475569;
+  --text-3: #57657A;      /* was #94A3B8 (2.56:1). Secondary text people read: IDs, labels, hints. >= 4.85:1 on every surface */
+  --text-placeholder: #6B7789; /* new: placeholders and empty date inputs (4.54:1) */
+  --text-disabled: #94A3B8;    /* new: disabled controls ONLY (WCAG-exempt); the old --text-3 value */
+  --text-inverse: #FFFFFF;     /* new: text and icons on --accent, --late and --text fills */
+  /* accent: fills, strokes, focus. Blue TEXT always uses --accent-text (--accent text is 4.24:1 on a selected row) */
+  --accent: #2563EB;      --accent-hover: #1D4ED8; --accent-soft: #DBEAFE;
+  --accent-active: #1E40AF; /* new: pressed primary */
+  --accent-softer: #EFF5FF; /* new: hover tints, start-screen icon squares, active menu button */
+  --accent-text: #1D4ED8;   /* new: links, selected segment label, "Today" */
+  --focus: #2563EB;         /* new: focus ring */
+  /* modes (SPEC §6): Plan is flagged in violet; Track is the neutral default. Chrome only, never data. */
+  --plan: #6D28D9;        /* new: Plan text and icons (7.10:1 on white, 5.98 on --plan-soft) */
+  --plan-edge: #7C3AED;   /* new: ring of the lit Plan option (4.77:1 vs the segmented track) */
+  --plan-soft: #EDE9FE;   /* new: "Editing the baseline" caption pill */
+  --plan-wash: #F3F0FD;   /* new: Plan-mode header bands; same lightness as --surface-2, violet hue */
+  --head-bg: var(--surface-2); /* new: grid header row + Gantt timeline band; re-pointed by .main.mode-plan below */
+  /* status */
+  --done: #15803D;        /* was #16A34A (2.70:1 on a selected lane). 5.02 white, 4.11 selected */
+  --done-soft: #DCFCE7;
+  --progress: #2563EB;    --progress-soft: #DBEAFE;
+  --late: #DC2626;        --late-soft: #FEE2E2;
+  --risk: #D97706;        --risk-soft: #FEF3C7;    /* --risk as a graphic only on --surface (3.19:1) */
+  --idle: #64748B;        /* was #94A3B8 (2.56:1). 4.76 white, 3.90 selected */
+  --idle-soft: #F1F5F9;
+  /* status text on white, the soft colours and --selected (WCAG AA) */
+  --done-text: #166534;   --progress-text: #1D4ED8; --late-text: #B91C1C; --risk-text: #92400E;
+  /* gantt */
+  --baseline: #707F95;    /* was #CBD5E1 (1.48:1). 4.07 white, 3.34 selected, 3.04 holiday-on-selected */
+  --nonwork: #F3F4F6;     /* unchanged */
+  --arrow: #77849A;       /* was #94A3B8 (2.56:1). 3.78 white, 3.40 hover, 3.10 selected */
+  /* major tasks (§5.12, §7.7, §7.8) */
+  --summary: #334155;     /* major-task bar and its end caps: 10.35 white */
+  --summary-soft: #E2E8F0; /* undone part of a Track-mode major-task bar, inside its --summary border */
+  --summary-band: #F8FAFC; /* a major task's grid row and Gantt lane; the hover (--surface-2) and selected bands still show */
+  /* weekends (§7.8): working days, so lighter than a holiday's --nonwork, in a hue apart from it and the Plan wash */
+  --weekend: #EEF2FF;     /* timeline day cell */
+  --weekend-col: #F5F7FF; /* chart column */
+  --weekend-text: #4338CA; /* day number on --weekend: 7.07 */
+  /* shape */
+  --radius-xs: 4px;       /* new: menu items, kbd, New tag, swatch-adjacent corners */
+  --radius-sm: 6px;  --radius: 8px;  --radius-lg: 12px;
+  --radius-xl: 16px;      /* new: start card, drop zone */
+  --radius-pill: 999px;   /* new: status pills, KPI pills, badges, counts */
+  --shadow-xs: 0 1px 1px rgba(15,23,42,.05);                                            /* new: outlined buttons, lit segment */
+  --shadow-1: 0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.08);               /* cards, report sheets */
+  --shadow-2: 0 2px 4px -1px rgba(15,23,42,.06), 0 12px 24px -6px rgba(15,23,42,.16);   /* menus, popovers, tooltip, toast */
+  --shadow-3: 0 4px 8px -2px rgba(15,23,42,.08), 0 24px 48px -12px rgba(15,23,42,.24);  /* new: dialogs, drawer, issues sheet */
+  --backdrop: rgba(15,23,42,.32);   /* behind modal dialogs */
+  /* type: only 400/500/600 are inlined; never use 700 */
+  --font: "IBM Plex Sans", "IBM Plex Sans Thai", "Leelawadee UI", system-ui, sans-serif;
+  --fs-xs: 11px; --fs-sm: 12px; --fs-md: 13px; --fs-base: 14px; --fs-lg: 16px; --fs-xl: 20px; --fs-kpi: 26px;
+  --fs-2xl: 24px;                                         /* new: start-screen headline only */
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; /* new */
+  --lh-tight: 1.2;   /* new: Latin-only figures (KPI values) */
+  --lh: 1.45;        /* new: body (= base.css today) */
+  --lh-ui: 1.5;      /* new: single clipped lines that can show Thai (no clipped tone marks) */
+  --lh-prose: 1.6;   /* new: dialog body, Remarks, key messages, start sub */
+  --tracking-caps: 0.04em; /* new: 11 px uppercase ENGLISH labels only, never data */
+  /* spacing (4px scale) */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px;
+  --sp-8: 32px; --sp-10: 40px;                            /* new */
+  /* controls */
+  --control-h-sm: 28px; --control-h: 32px; --control-h-lg: 36px; /* new */
+  /* motion (§7.2: 150 ms ease-out for hover, drawer and popovers only) */
+  --ease: 150ms ease-out;                                 /* new */
+  /* layout */
+  --row-h: 36px;          /* compact 30px, comfortable 40px */
+  --header-h: 60px;       /* was 56 (min-height; it grew to ~64 with the "Today is" hint). Now a fixed height */
+  --toolbar-h: 44px; --drawer-w: 400px;
+}
+
+/* Mode scope (SPEC §6, §7.1): MainView puts mode-plan / mode-track on .main. Only --head-bg changes. */
+.main.mode-plan { --head-bg: var(--plan-wash); }
