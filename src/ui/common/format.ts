@@ -14,6 +14,11 @@ export function formatDateLong(d: ISODate): string {
   return `${Number(d.slice(8, 10))} ${month(d)} ${d.slice(0, 4)}`;
 }
 
+/** A formatted date with its half day (§7.8, §7.9): "3 Nov 2026 afternoon" for a start, "4 Nov 2026 midday" for a finish. */
+export function withHalf(text: string, half: boolean | undefined, word: 'afternoon' | 'midday'): string {
+  return half ? `${text} ${word}` : text;
+}
+
 /** `d MMM`, e.g. 3 Nov — labels and change lists. */
 export function formatDayMonth(d: ISODate): string {
   return `${Number(d.slice(8, 10))} ${month(d)}`;

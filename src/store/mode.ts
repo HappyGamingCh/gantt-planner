@@ -1,6 +1,7 @@
 // Plan ↔ Track (SPEC §6): one undo step, saved to Project › Mode. Track freezes the baseline; dates that move when
 // the plan is recalculated are listed in Changes (§7.11).
-import type { Change, ISODate, Project, TaskResult } from '../engine/types';
+import { withHalf } from '../engine/schedule';
+import type { Change, Project, TaskResult } from '../engine/types';
 import { openIssues, showToast, useStore } from './store';
 import { commit } from './undo';
 
@@ -31,7 +32,17 @@ function applyMode(mode: Project['mode']) {
     mode === 'Track'
       ? plan.tasks.map((t) => {
           const r = before.get(t.id);
-          return r ? { ...t, plannedStart: r.plannedStart, plannedDuration: r.plannedDuration, plannedFinish: r.plannedFinish } : t;
+          if (!r) return t;
+          // With its half days (§5.1): an afternoon start and a midday finish stay in the baseline.
+          const { plannedStartPM: _s, plannedFinishMidday: _f, ...rest } = t;
+          return {
+            ...rest,
+            plannedStart: r.plannedStart,
+            plannedDuration: r.plannedDuration,
+            plannedFinish: r.plannedFinish,
+            ...(r.plannedStartPM ? { plannedStartPM: true } : {}),
+            ...(r.plannedFinishMidday ? { plannedFinishMidday: true } : {}),
+          };
         })
       : plan.tasks;
   commit((p) => ({ ...p, tasks, project: { ...p.project, mode } }));
@@ -47,10 +58,11 @@ export function reportMoved(before: ReadonlyMap<number, TaskResult>): void {
   for (const r of get().result?.tasks ?? []) {
     const b = before.get(r.id);
     if (!b) continue;
-    const change = (field: string, from: ISODate, to: ISODate) =>
+    const change = (field: string, from: string, to: string) =>
       from !== to && moved.push({ taskId: r.id, field, from, to, kind: 'corrected', reason: 'Plan recalculated' });
-    change('Planned Start', b.plannedStart, r.plannedStart);
-    change('Planned Finish', b.plannedFinish, r.plannedFinish);
+    // A move by half a day counts too (§5.1): "3 Nov → 3 Nov afternoon".
+    change('Planned Start', withHalf(b.plannedStart, b.plannedStartPM, 'afternoon'), withHalf(r.plannedStart, r.plannedStartPM, 'afternoon'));
+    change('Planned Finish', withHalf(b.plannedFinish, b.plannedFinishMidday, 'midday'), withHalf(r.plannedFinish, r.plannedFinishMidday, 'midday'));
   }
   if (moved.length === 0) return;
   // A date recalculated again keeps one entry, from its value before the first recalculation (§7.11).

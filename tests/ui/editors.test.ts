@@ -67,10 +67,12 @@ describe('date editor — SPEC §7.7, §4.3 (1950–2199)', () => {
 });
 
 describe('duration editor — SPEC §7.7 "inline input with validation"', () => {
-  it('keeps the decimal point: 1.5 is rounded to 2 days with a note, never read as 15', () => {
-    expect(parseDuration('1.5')).toEqual({ value: 2, note: 'Rounded to 2 days — whole working days only' });
-    expect(parseDuration('0,5')).toEqual({ value: 1, note: 'Rounded to 1 day — whole working days only' });
-    expect(parseDuration('.4').value).toBe(0);
+  it('keeps the decimal point: 1.5 is a day and a half, never 15; other decimals go to the nearest half day with a note', () => {
+    expect(parseDuration('1.5')).toEqual({ value: 1.5, note: undefined });
+    expect(parseDuration('0,5')).toEqual({ value: 0.5, note: undefined });
+    expect(parseDuration('1.3')).toEqual({ value: 1.5, note: 'Rounded to 1.5 days — steps of half a day' });
+    expect(parseDuration('0.8')).toEqual({ value: 1, note: 'Rounded to 1 day — steps of half a day' });
+    expect(parseDuration('.2').value).toBe(0);
     expect(parseDuration(' 12 ')).toEqual({ value: 12, note: undefined });
   });
 
@@ -80,9 +82,9 @@ describe('duration editor — SPEC §7.7 "inline input with validation"', () => 
   });
 
   it('rejects text, negatives and more than MAX_DAYS with a message', () => {
-    expect(parseDuration('a').error).toBe('Enter whole working days, e.g. 5');
-    expect(parseDuration('5d').error).toBe('Enter whole working days, e.g. 5');
-    expect(parseDuration('1e3').error).toBe('Enter whole working days, e.g. 5');
+    expect(parseDuration('a').error).toBe('Enter working days, e.g. 5 or 0.5');
+    expect(parseDuration('5d').error).toBe('Enter working days, e.g. 5 or 0.5');
+    expect(parseDuration('1e3').error).toBe('Enter working days, e.g. 5 or 0.5');
     expect(parseDuration('-1').error).toBe("Duration can't be negative");
     expect(parseDuration(String(MAX_DAYS)).value).toBe(MAX_DAYS);
     expect(parseDuration(String(MAX_DAYS + 1)).error).toBe(`Duration must be 0–${MAX_DAYS} days`);

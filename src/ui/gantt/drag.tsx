@@ -1,14 +1,14 @@
 // Drag on the Gantt (SPEC §7.8, Plan mode only): move a root task's bar to change Planned Start, drag the right
-// edge of a bar to change Planned Duration. Dates snap to working days; a ghost bar and a date tooltip follow the
-// pointer, the chart scrolls by itself near the pane's edges; releasing makes one edit (one undo step), Esc cancels.
+// edge of a bar to change Planned Duration. Dates snap to working half days while the timeline shows single days,
+// else to working days; a ghost bar and a date tooltip follow the pointer, the chart scrolls by itself near the
+// pane's edges; releasing makes one edit (one undo step), Esc cancels.
 import { useCallback, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import type { Calendar } from '../../engine/calendar';
-import { addDays } from '../../engine/dates';
-import { finishFrom } from '../../engine/schedule';
+import { dayOf, finishHalf, halfOf, isAfternoon, type Calendar } from '../../engine/calendar';
+import { finishFrom, finishesMidday } from '../../engine/schedule';
 import type { ISODate, TaskResult } from '../../engine/types';
 import { editTask } from '../../store/edit';
 import type { Row } from '../../store/selectors';
-import { formatDateLong, formatDays } from '../common/format';
+import { formatDateLong, formatDays, withHalf } from '../common/format';
 import type { Point } from './arrows';
 import { FloatingTip } from './GanttTooltip';
 import type { GanttScale } from './scale';
@@ -18,7 +18,7 @@ export type DragKind = 'move' | 'resize';
 export interface Drag {
   row: Row;
   kind: DragKind;
-  /** Whole days the pointer has moved over the chart (scrolling the chart while dragging counts). */
+  /** Days the pointer has moved over the chart, in steps of a day or half a day (scrolling the chart counts). */
   days: number;
   /** Where the pointer was when the press became a drag: the tooltip starts there, then follows the pointer itself. */
   at: Point;
@@ -41,23 +41,48 @@ export function edgeStep(x: number, x0: number, left: number, right: number): nu
 }
 
 /**
- * Whole days a drag has moved: the pointer's travel from x0 plus the pane's scroll from left0, so scrolling the chart
- * while dragging counts. Null while a press (`started` false) is still short of a drag.
+ * Days a drag has moved, to the nearest `step` (1, or 0.5 while the timeline shows single days, §7.8): the pointer's
+ * travel from x0 plus the pane's scroll from left0, so scrolling the chart while dragging counts. Null while a press
+ * (`started` false) is still short of a drag.
  */
-export function dragDays(x: number, x0: number, scrollLeft: number, left0: number, px: number, started: boolean): number | null {
+export function dragDays(x: number, x0: number, scrollLeft: number, left0: number, px: number, started: boolean, step = 1): number | null {
   const dx = x - x0 + scrollLeft - left0;
   if (!started && Math.abs(dx) < THRESHOLD) return null;
-  return Math.round(dx / px);
+  return Math.round(dx / px / step) * step || 0; // never -0
 }
 
-/** Planned dates after dragging `days` days, snapped to working days. A resized bar keeps at least 1 day. */
-export function dragDates(r: TaskResult, kind: DragKind, days: number, cal: Calendar): { start: ISODate; duration: number; finish: ISODate } {
+/** Planned dates after a drag, with their half days: set only when the start is an afternoon or the finish a midday. */
+export interface DragDates {
+  start: ISODate;
+  duration: number;
+  finish: ISODate;
+  startPM?: true;
+  finishMidday?: true;
+}
+
+/**
+ * Planned dates after dragging `days` days (whole or half), snapped to working halves. A resized bar keeps at least
+ * one step: a day when the drag and the bar are whole days, else half a day.
+ */
+export function dragDates(r: TaskResult, kind: DragKind, days: number, cal: Calendar): DragDates {
+  const shift = Math.round(days * 2);
+  const from = halfOf(r.plannedStart, r.plannedStartPM);
+  let s = from;
+  let duration = r.plannedDuration;
   if (kind === 'move') {
-    const start = cal.snapForward(addDays(r.plannedStart, days));
-    return { start, duration: r.plannedDuration, finish: finishFrom(start, r.plannedDuration, cal) };
+    s = cal.snapHalf(from + shift);
+  } else {
+    const least = shift % 2 === 0 && Number.isInteger(r.plannedDuration) ? 2 : 1;
+    duration = Math.max(least, cal.countHalves(from, finishHalf(r.plannedFinish, r.plannedFinishMidday) + shift)) / 2;
   }
-  const duration = Math.max(1, cal.countWorkdays(r.plannedStart, addDays(r.plannedFinish, days)));
-  return { start: r.plannedStart, duration, finish: finishFrom(r.plannedStart, duration, cal) };
+  const f = finishFrom(s, duration, cal); // a milestone moves as a point: f = s
+  return {
+    start: dayOf(s),
+    duration,
+    finish: dayOf(f),
+    ...(isAfternoon(s) ? { startPM: true as const } : {}),
+    ...(finishesMidday(f, duration === 0) ? { finishMidday: true as const } : {}),
+  };
 }
 
 /** A task with predecessors gets its start from them: its bar doesn't move (releasing explains why). */
@@ -78,8 +103,9 @@ export function useBarDrag(scale: GanttScale, cal: Calendar) {
       let last: Point = { x: e.clientX, y: e.clientY };
       let current: Drag | null = null;
       let frame = 0;
+      const step = scale.detail === 'day' ? 0.5 : 1; // half days only where single days are shown (§7.8)
       const update = () => {
-        const days = dragDays(last.x, x0, pane?.scrollLeft ?? 0, left0, scale.px, current !== null);
+        const days = dragDays(last.x, x0, pane?.scrollLeft ?? 0, left0, scale.px, current !== null, step);
         if (days === null || current?.days === days) return; // the chart re-renders only when the date changes
         current = { row, kind, days, at: current?.at ?? last };
         setDrag(current);
@@ -112,7 +138,7 @@ export function useBarDrag(scale: GanttScale, cal: Calendar) {
         if (!apply || !current || current.days === 0) return;
         const dates = dragDates(row.r, kind, current.days, cal);
         if (kind === 'resize') editTask(row.task.id, 'plannedDuration', dates.duration);
-        else editTask(row.task.id, 'plannedStart', dates.start); // a task with predecessors: the edit rule's toast says why
+        else editTask(row.task.id, 'plannedStart', { date: dates.start, afternoon: dates.startPM === true }); // linked: the rule's toast says why
       };
       const up = () => end(true);
       const cancel = () => end(false);
@@ -138,28 +164,31 @@ export function useBarDrag(scale: GanttScale, cal: Calendar) {
 export function DragGhost({ drag, top, rowHeight, scale, cal }: { drag: Drag; top: number; rowHeight: number; scale: GanttScale; cal: Calendar }) {
   const { r } = drag.row;
   if (drag.kind === 'move' && !movable(r)) return null;
-  const { start, finish } = dragDates(r, drag.kind, drag.days, cal);
+  const { start, finish, startPM, finishMidday } = dragDates(r, drag.kind, drag.days, cal);
   const mid = top + rowHeight / 2;
   if (r.plannedDuration === 0) {
     const cx = scale.x(start) + scale.px / 2;
     return <path className="drag-ghost" d={`M${cx},${mid - 7} L${cx + 7},${mid} L${cx},${mid + 7} L${cx - 7},${mid} Z`} />;
   }
-  const x0 = scale.x(start);
-  return <rect className="drag-ghost" x={x0} y={mid - 8} width={Math.max(2, scale.x(finish) + scale.px - x0)} height={16} rx={4} />;
+  const x0 = scale.x(start) + (startPM ? scale.px / 2 : 0);
+  const x1 = scale.x(finish) + (finishMidday ? scale.px / 2 : scale.px);
+  return <rect className="drag-ghost" x={x0} y={mid - 8} width={Math.max(2, x1 - x0)} height={16} rx={4} />;
 }
 
 /** Dates under the pointer while dragging. */
 export function DragTip({ drag, cal }: { drag: Drag; cal: Calendar }) {
   const { r } = drag.row;
   const locked = drag.kind === 'move' && !movable(r);
-  const { start, finish, duration } = dragDates(r, drag.kind, drag.days, cal);
+  const { start, finish, duration, startPM, finishMidday } = dragDates(r, drag.kind, drag.days, cal);
+  const from = withHalf(formatDateLong(start), startPM, 'afternoon');
+  const to = withHalf(formatDateLong(finish), finishMidday, 'midday');
   return (
     <FloatingTip at={drag.at} className="gantt-tip drag-tip" role="status">
       {locked ? (
         'Set by predecessors — add lag to delay'
       ) : (
         <>
-          <strong>{start === finish ? formatDateLong(start) : `${formatDateLong(start)} → ${formatDateLong(finish)}`}</strong>
+          <strong>{duration === 0 || (start === finish && !startPM && !finishMidday) ? from : `${from} → ${to}`}</strong>
           <span className="tip-sub">{duration === 0 ? 'Milestone' : formatDays(duration)}</span>
         </>
       )}

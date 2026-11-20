@@ -1,11 +1,11 @@
 // Writing the Tasks sheet (SPEC §4.8): one row per task in plan order, values only; unknown columns, styles, notes
 // and row grouping travel with their task, and ranges that covered the task rows follow them.
-import type { ComputeResult, ISODate, Task, TaskResult } from '../engine/types';
+import type { ComputeResult, Task, TaskResult } from '../engine/types';
 import { cellText, excelDate, isBlank, isDateFormat, isFormula, isPercentFormat, keepsTime, nameLines } from './cells';
-import { clearNote, conditionalFormatsOf, mergesOf, validationsOf, type Cell, type CellValue, type Row, type Style, type Worksheet } from './exceljs';
+import { clearNote, conditionalFormatsOf, mergesOf, validationsOf, type Cell, type CellValue, type DataValidation, type Row, type Style, type Worksheet } from './exceljs';
 import type { SourceRow, TasksLayout } from './readTasks';
 import { COLUMN_OF, DATE_FORMAT, TASK_COLUMNS, columnLetter, defaultCellStyle, readTasksHeader, statusFill, type TaskColumn, type TaskField } from './schema';
-import { addTaskColumn } from './template';
+import { addTaskColumn, DURATION_RULE, isOldDurationRule } from './template';
 import { keepsUnparsed, writtenValue } from './writtenValues';
 
 export function writeTasks(ws: Worksheet, tasks: readonly Task[], result: ComputeResult, layout: TasksLayout) {
@@ -34,6 +34,8 @@ export function writeTasks(ws: Worksheet, tasks: readonly Task[], result: Comput
     ws.getColumn(last).width = 16;
     extras.set(key, last);
   }
+
+  updateDurationRule(ws, columnLetter(header.known.get('plannedDuration')!));
 
   // Predecessors typed in Excel stay text: in a General cell Excel turns "5,120" into 5120 and "3-1" into a date.
   const predecessors = ws.getColumn(header.known.get('predecessors')!);
@@ -98,6 +100,20 @@ function fitTaskBlock(ws: Worksheet, oldLast: number, newLast: number) {
   }
 }
 
+/**
+ * §4.8: older templates put a whole-number rule on Planned Duration, which makes Excel refuse 0.5. Where that exact rule
+ * is on the column, the template's decimal rule replaces it; one shared object, as the reader shares one per range, so
+ * the rule still grows with the task rows (fitTaskBlock). A rule the user made is left alone.
+ */
+function updateDurationRule(ws: Worksheet, column: string) {
+  const rules = validationsOf(ws).model;
+  let rule: DataValidation | undefined;
+  for (const [address, old] of Object.entries(rules)) {
+    if (/^\$?([A-Z]+)/.exec(address)?.[1] !== column || !isOldDurationRule(old)) continue;
+    rules[address] = rule ??= structuredClone(DURATION_RULE);
+  }
+}
+
 /** The autofilter's range, written as 'A1:R1' (a loaded file) or with from/to (the template). */
 function filterRange(filter: Worksheet['autoFilter']): { top: number; left: number; bottom: number; right: number } | undefined {
   const point = (p: string | { row: number; column: number }) => {
@@ -155,8 +171,8 @@ function writeTaskRow(
     } else if (value === undefined || value === '') {
       out = null;
     } else if (column.kind === 'date') {
-      // An input date with a time of day (a 19:00 night-shift start) stays while its day is unchanged.
-      out = !column.calc && keepsTime(original, value as ISODate) ? original : excelDate(value as ISODate);
+      // An input date with a time of day (a 19:00 night-shift start) stays while its day (and its half) is unchanged.
+      out = !column.calc && keepsTime(original, value as string, field === 'plannedStart') ? original : excelDate(value as string);
       if (!isDateFormat(style.numFmt)) style.numFmt = DATE_FORMAT;
     } else if (field === 'progress' && isPercentFormat(style.numFmt)) {
       out = (value as number) / 100;

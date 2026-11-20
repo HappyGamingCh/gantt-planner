@@ -29,14 +29,20 @@ export function handleSpan(x1: number, width: number): { x: number; width: numbe
   return width < 16 ? { x: x1, width: 6 } : { x: x1 - 4, width: 8 };
 }
 
-/** Where a task's mark starts and ends on the chart, in the given mode. */
+/**
+ * Where a task's mark starts and ends on the chart, in the given mode. A start in the afternoon begins in the middle of
+ * its day column and a finish at midday ends in the middle of its last (§7.8); a milestone is centred on its day.
+ */
 export function span(r: TaskResult, mode: 'Plan' | 'Track', scale: GanttScale): { x0: number; x1: number; milestone: boolean } {
-  const [start, finish] = mode === 'Plan' ? [r.plannedStart, r.plannedFinish] : [r.forecastStart, r.forecastFinish];
+  const plan = mode === 'Plan';
+  const [start, finish] = plan ? [r.plannedStart, r.plannedFinish] : [r.forecastStart, r.forecastFinish];
   if (r.plannedDuration === 0 && !r.summary) {
     const cx = scale.x(finish) + scale.px / 2;
     return { x0: cx - HALF, x1: cx + HALF, milestone: true };
   }
-  return { x0: scale.x(start), x1: scale.x(finish) + scale.px, milestone: false };
+  const pm = plan ? r.plannedStartPM : r.forecastStartPM;
+  const midday = plan ? r.plannedFinishMidday : r.forecastFinishMidday;
+  return { x0: scale.x(start) + (pm ? scale.px / 2 : 0), x1: scale.x(finish) + (midday ? scale.px / 2 : scale.px), milestone: false };
 }
 
 function Diamond({ cx, cy, half = HALF, className, onPointerDown }: { cx: number; cy: number; half?: number; className: string; onPointerDown?: (e: PointerEvent<SVGElement>) => void }) {

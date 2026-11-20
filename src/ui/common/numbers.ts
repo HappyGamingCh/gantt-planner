@@ -17,15 +17,18 @@ function parseNumber(text: string): number | null {
   return NUMBER_RE.test(t) ? Number(t) : null;
 }
 
-/** Planned Duration (§4.3): whole working days 0–MAX_DAYS; a decimal is rounded, as when it is read from Excel (§4.7). */
+/**
+ * Planned Duration (§4.3): working days 0–MAX_DAYS in steps of half a day; another decimal is rounded to the nearest
+ * half, as when it is read from Excel (§4.7).
+ */
 export function parseDuration(text: string): NumberInput {
   if (text.trim() === '') return {};
   const n = parseNumber(text);
-  if (n === null) return { error: 'Enter whole working days, e.g. 5' };
+  if (n === null) return { error: 'Enter working days, e.g. 5 or 0.5' };
   if (n < 0) return { error: "Duration can't be negative" };
-  const days = Math.round(n);
+  const days = Math.round(n * 2) / 2;
   if (days > MAX_DAYS) return { error: DURATION_MESSAGE }; // the store refuses it too: same words
-  return { value: days, note: days !== n ? `Rounded to ${days} day${days === 1 ? '' : 's'} — whole working days only` : undefined };
+  return { value: days, note: days !== n ? `Rounded to ${days} day${days === 1 ? '' : 's'} — steps of half a day` : undefined };
 }
 
 /** Progress (§4.3): a whole percent 0–100; a decimal is rounded. */

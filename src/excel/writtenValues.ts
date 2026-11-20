@@ -1,12 +1,16 @@
 // What Save writes in each known Tasks column (SPEC §4.8), and which text it keeps as the file has it. Shared by the
 // writer, the load report (calculated Changes) and the Problems list.
+import { withHalf } from '../engine/schedule';
 import type { Change, ComputeResult, Task, TaskResult } from '../engine/types';
-import { cellText, isFormula, parseDate, parseDuration, parseNumber } from './cells';
+import { cellText, isFormula, isNoon, parseDate, parseDuration, parseNumber } from './cells';
 import type { CellValue } from './exceljs';
 import type { SourceRow, TasksLayout } from './readTasks';
 import { COLUMN_OF, type TaskColumn, type TaskField } from './schema';
 
-/** The value the app writes for a known column; ISO strings for date columns, undefined for blank. */
+/**
+ * The value the app writes for a known column; ISO strings for date columns (with ` afternoon` / ` midday` for a half
+ * day, written as 12:00, §4.8), undefined for blank.
+ */
 export function writtenValue(task: Task, r: TaskResult, field: TaskField): string | number | undefined {
   switch (field) {
     case 'id':
@@ -31,11 +35,11 @@ function resultValue(r: TaskResult, field: Exclude<TaskField, 'id' | 'level' | '
     case 'predecessors':
       return r.predecessorsText;
     case 'plannedStart':
-      return r.plannedStart;
+      return withHalf(r.plannedStart, r.plannedStartPM, 'afternoon');
     case 'plannedDuration':
       return r.plannedDuration;
     case 'plannedFinish':
-      return r.plannedFinish;
+      return withHalf(r.plannedFinish, r.plannedFinishMidday, 'midday');
     case 'progress':
       return r.progress;
     case 'actualStart':
@@ -47,9 +51,9 @@ function resultValue(r: TaskResult, field: Exclude<TaskField, 'id' | 'level' | '
     case 'status':
       return r.status;
     case 'forecastStart':
-      return r.forecastStart;
+      return withHalf(r.forecastStart, r.forecastStartPM, 'afternoon');
     case 'forecastFinish':
-      return r.forecastFinish;
+      return withHalf(r.forecastFinish, r.forecastFinishMidday, 'midday');
     case 'variance':
       return r.variance;
     case 'critical':
@@ -87,10 +91,22 @@ export function calculatedChanges(tasks: readonly Task[], layout: TasksLayout, r
   return changes;
 }
 
+/** The word a 12:00 time means in a date column (§4.7): a start in the afternoon, a finish at midday. */
+const HALF_WORD: Partial<Record<TaskField, 'afternoon' | 'midday'>> = {
+  plannedStart: 'afternoon',
+  forecastStart: 'afternoon',
+  plannedFinish: 'midday',
+  forecastFinish: 'midday',
+};
+
 function comparable(value: CellValue, column: TaskColumn): string | number | undefined {
   const text = cellText(value).trim();
   if (text === '') return undefined;
-  if (column.kind === 'date') return parseDate(value).value ?? text;
+  if (column.kind === 'date') {
+    const date = parseDate(value).value;
+    const word = HALF_WORD[column.field];
+    return date === undefined ? text : word ? withHalf(date, isNoon(value), word) : date;
+  }
   if (column.kind === 'number') return parseNumber(value).value ?? text;
   return text;
 }

@@ -427,7 +427,7 @@ describe('Planned Duration with a day unit — SPEC §4.7', () => {
     const wb = templateWith([
       { ID: 1, Task: 'A', 'Planned Start': '2026-11-02', 'Planned Duration': '5 days' },
       { ID: 2, Task: 'B', Predecessors: '1', 'Planned Duration': '3d' },
-      { ID: 3, Task: 'C', Predecessors: '2', 'Planned Duration': '4.4 วัน' },
+      { ID: 3, Task: 'C', Predecessors: '2', 'Planned Duration': '4.2 วัน' },
     ]);
     const r = read(wb);
     expect(r.plan.tasks.map((t) => t.plannedDuration)).toEqual([5, 3, 4]);
@@ -435,7 +435,7 @@ describe('Planned Duration with a day unit — SPEC §4.7', () => {
     expect(r.changes.filter((c) => c.field === 'Planned Duration').map((c) => [c.from, c.to, c.reason])).toEqual([
       ['5 days', 5, 'Unit removed'],
       ['3d', 3, 'Unit removed'],
-      ['4.4 วัน', 4, 'Unit removed, rounded to a whole number'],
+      ['4.2 วัน', 4, 'Unit removed, rounded to half a day'],
     ]);
     expect(computePlan(r.plan).tasks.at(-1)?.plannedFinish).toBe('2026-11-13');
     const saved = await save(wb, r);

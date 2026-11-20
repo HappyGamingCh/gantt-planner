@@ -8,7 +8,7 @@ import { linksOf } from '../../store/predecessors';
 import { closeDrawer, drawerFocused, nameFocused, openDrawer, revealTask, useStore } from '../../store/store';
 import { AssigneeInput } from '../common/AssigneeInput';
 import { restoreFocus } from '../common/focus';
-import { formatDate, formatVariance } from '../common/format';
+import { formatDate, formatVariance, withHalf } from '../common/format';
 import { DateField, DaysField, ProgressField, TextField } from './fields';
 import { drawerChips, neighbours } from './logic';
 import { PredecessorEditor } from './PredecessorEditor';
@@ -68,6 +68,7 @@ export function TaskDrawer({ plan, result, suggestions, order }: { plan: Plan; r
           readOnly={locked('plannedStart')}
           hint={reason('plannedStart')}
           linked={r.links.length > 0}
+          half={r.plannedStartPM ? 'afternoon' : undefined}
         />
         <DaysField key={`duration-${task.id}`} label="Duration" value={r.plannedDuration} onSave={edit('plannedDuration')} readOnly={locked('plannedDuration')} hint={reason('plannedDuration')} />
         <DateField
@@ -78,6 +79,7 @@ export function TaskDrawer({ plan, result, suggestions, order }: { plan: Plan; r
           readOnly={locked('plannedFinish')}
           hint={reason('plannedFinish')}
           required="Finish can't be blank — change the duration instead"
+          half={r.plannedFinishMidday ? 'midday' : undefined}
         />
       </div>
     </Section>
@@ -98,7 +100,7 @@ export function TaskDrawer({ plan, result, suggestions, order }: { plan: Plan; r
   const forecast = (
     <Section key="forecast" title="Forecast">
       <p className="drawer-value">
-        {formatDate(r.forecastStart)} → {formatDate(r.forecastFinish)}
+        {withHalf(formatDate(r.forecastStart), r.forecastStartPM, 'afternoon')} → {withHalf(formatDate(r.forecastFinish), r.forecastFinishMidday, 'midday')}
         {r.variance !== 0 && (
           <>
             {' · '}

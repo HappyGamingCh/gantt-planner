@@ -14,8 +14,12 @@ export interface Task {
   assigned: string[];
   predecessorsText: string; // as typed; the single source of truth for links
   plannedStart?: ISODate;
-  plannedDuration?: number;
+  /** Starts in the afternoon of Planned Start (§5.1): 12:00 in the file, or a bar dragged there. */
+  plannedStartPM?: boolean;
+  plannedDuration?: number; // working days, in steps of 0.5
   plannedFinish?: ISODate;
+  /** The stored Planned Finish is at midday (12:00 in the file); Track mode keeps it (§5.4). */
+  plannedFinishMidday?: boolean;
   progress: number; // 0–100
   actualStart?: ISODate;
   actualFinish?: ISODate;
@@ -70,6 +74,9 @@ export interface TaskResult {
   plannedStart: ISODate;
   plannedDuration: number;
   plannedFinish: ISODate;
+  /** Half days (§5.1): starts in the afternoon / finishes at midday; Save writes such a date with the time 12:00. */
+  plannedStartPM?: boolean;
+  plannedFinishMidday?: boolean;
   progress: number; // value to write back (rounded, clamped, 100 when Actual Finish is set)
   /** Normalized outline depth (§4.7, §5.12). */
   level: number;
@@ -79,6 +86,8 @@ export interface TaskResult {
   actualDuration?: number;
   forecastStart: ISODate;
   forecastFinish: ISODate;
+  forecastStartPM?: boolean;
+  forecastFinishMidday?: boolean;
   variance: number;
   status: Status;
   predecessorsText: string; // canonical notation, or the original text if any token has an issue
@@ -216,4 +225,9 @@ export interface TaskCalc {
   forecastStart: ISODate;
   forecastFinish: ISODate;
   status: Status;
+  /** Halves (§5.1): planned and forecast start, and finish as the half it ends in (a start milestone: its day's end). */
+  ps: number;
+  pf: number;
+  fs: number;
+  ff: number;
 }

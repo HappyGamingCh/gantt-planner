@@ -1,10 +1,13 @@
 // Status & variance (SPEC §5.7).
-import type { Calendar } from './calendar';
-import type { ISODate, Status } from './types';
+import { dayOf, type Calendar, type Half } from './calendar';
+import type { Status } from './types';
 
-/** Working days from Planned Finish to the actual/forecast finish; positive = late. */
-export function taskVariance(plannedFinish: ISODate, finishRef: ISODate, cal: Calendar): number {
-  return cal.workdayDiff(plannedFinish, finishRef);
+/**
+ * Working days from Planned Finish to the actual/forecast finish (halves ÷ 2); positive = late. A completed task
+ * compares days: actual dates are whole days, so a 0.5-day task finished on its planned day is on time.
+ */
+export function taskVariance(plannedFinish: Half, finishRef: Half, completed: boolean, cal: Calendar): number {
+  return completed ? cal.workdayDiff(dayOf(plannedFinish), dayOf(finishRef)) : cal.halfDiff(plannedFinish, finishRef) / 2;
 }
 
 export function taskStatus(completed: boolean, variance: number, started: boolean): Status {

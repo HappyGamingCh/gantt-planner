@@ -34,11 +34,12 @@ export function durationProblem(text: string): string | null {
   return parseDuration(text).error ?? null; // the grid's Duration editor checks it the same way
 }
 
-/** Lag typed in the drawer: whole working days within ±MAX_DAYS; blank = 0. */
+/** Lag typed in the drawer: working days in steps of half a day (§5.2) within ±MAX_DAYS; blank = 0. */
 export function parseLag(text: string): { lag: number } | { message: string } {
-  const t = text.trim();
-  if (!/^-?\d*$/.test(t) || t === '-') return { message: 'Lag must be a whole number of working days' };
-  const lag = Number(t) || 0; // '-0' is 0
+  const t = text.trim().replace(',', '.');
+  if (t !== '' && !/^-?(\d+(\.\d*)?|\.\d+)$/.test(t)) return { message: 'Lag must be a number of working days, e.g. 2 or 0.5' };
+  const lag = Number(t) || 0; // blank and '-0' are 0
+  if (!Number.isInteger(lag * 2)) return { message: 'Lag must be in steps of half a day, e.g. 0.5 or 1.5' };
   return Math.abs(lag) > MAX_DAYS ? { message: `Lag must be between −${MAX_DAYS} and ${MAX_DAYS} working days` } : { lag };
 }
 

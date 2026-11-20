@@ -86,9 +86,10 @@ function LagInput({ lag, onChange }: { lag: number; onChange: (lag: number) => v
         className="lag-input"
         aria-label="Lag in working days"
         title="Lag in working days (negative = lead)"
-        maxLength={5}
+        inputMode="decimal"
+        maxLength={7}
         value={draft ?? String(lag)}
-        onChange={(e) => setDraft(e.target.value.replace(/[^\d-]/g, ''))}
+        onChange={(e) => setDraft(e.target.value.replace(/[^\d.,-]/g, ''))}
         onBlur={save}
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();

@@ -18,9 +18,24 @@ export function settle(plan: Plan): { plan: Plan; result: ComputeResult } {
   const tasks = plan.tasks.map((task) => {
     const r = byId.get(task.id);
     if (!r || (plan.project.mode === 'Track' && !task.isNewThisSession)) return task;
-    if (task.plannedStart === r.plannedStart && task.plannedDuration === r.plannedDuration && task.plannedFinish === r.plannedFinish) return task;
+    const same =
+      task.plannedStart === r.plannedStart &&
+      task.plannedDuration === r.plannedDuration &&
+      task.plannedFinish === r.plannedFinish &&
+      !!task.plannedStartPM === !!r.plannedStartPM &&
+      !!task.plannedFinishMidday === !!r.plannedFinishMidday;
+    if (same) return task;
     changed = true;
-    return { ...task, plannedStart: r.plannedStart, plannedDuration: r.plannedDuration, plannedFinish: r.plannedFinish };
+    // The half days too (§5.1), so Track mode keeps an afternoon start and a midday finish as they were planned.
+    const { plannedStartPM: _s, plannedFinishMidday: _f, ...rest } = task;
+    return {
+      ...rest,
+      plannedStart: r.plannedStart,
+      plannedDuration: r.plannedDuration,
+      plannedFinish: r.plannedFinish,
+      ...(r.plannedStartPM ? { plannedStartPM: true } : {}),
+      ...(r.plannedFinishMidday ? { plannedFinishMidday: true } : {}),
+    };
   });
   if (!changed) return { plan, result };
   const settled = { ...plan, tasks };

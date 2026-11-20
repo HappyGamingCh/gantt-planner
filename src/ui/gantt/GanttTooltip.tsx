@@ -2,11 +2,17 @@
 // The card and the drag tooltip follow the pointer by themselves, so moving the pointer re-renders only the card.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Row } from '../../store/selectors';
-import { formatDateLong, formatDays, formatVariance, plural } from '../common/format';
+import { formatDateLong, formatDays, formatVariance, plural, withHalf } from '../common/format';
 import { StatusChip } from '../grid/cells';
 import type { Point } from './arrows';
 
-const range = (a: string, b: string) => (a === b ? formatDateLong(a) : `${formatDateLong(a)} → ${formatDateLong(b)}`);
+/** "2 Nov 2026 → 5 Nov 2026"; a start in the afternoon and a finish at midday say so (§7.8); a point is one date. */
+function range(a: string, b: string, pm: boolean | undefined, midday: boolean | undefined, point: boolean): string {
+  const to = withHalf(formatDateLong(b), midday, 'midday');
+  if (point) return to;
+  const from = withHalf(formatDateLong(a), pm, 'afternoon');
+  return a === b && !pm && !midday ? from : `${from} → ${to}`;
+}
 
 const MARGIN = 8; // from the window's edges
 
@@ -45,6 +51,7 @@ export function FloatingTip({ at, className, role, children }: { at: Point; clas
 
 export function GanttTooltip({ row, at }: { row: Row; at: Point }) {
   const { task, r } = row;
+  const milestone = r.plannedDuration === 0 && !r.summary;
   return (
     <FloatingTip at={at} className="gantt-tip" role="tooltip">
       <div className="tip-title">
@@ -58,10 +65,10 @@ export function GanttTooltip({ row, at }: { row: Row; at: Point }) {
       <dl className="tip-facts">
         <dt>Planned</dt>
         <dd>
-          {range(r.plannedStart, r.plannedFinish)} · {formatDays(r.plannedDuration)}
+          {range(r.plannedStart, r.plannedFinish, r.plannedStartPM, r.plannedFinishMidday, milestone)} · {formatDays(r.plannedDuration)}
         </dd>
         <dt>{r.status === 'Completed' ? 'Actual' : 'Forecast'}</dt>
-        <dd>{range(r.forecastStart, r.forecastFinish)}</dd>
+        <dd>{range(r.forecastStart, r.forecastFinish, r.forecastStartPM, r.forecastFinishMidday, milestone)}</dd>
         <dt>Progress</dt>
         <dd>
           {r.progress}% <StatusChip status={r.status} />

@@ -40,8 +40,19 @@ describe('parsePredecessors — SPEC §5.2 examples', () => {
     expect(parsePredecessors('')).toEqual([]);
   });
 
+  it('reads lags in half days (§5.2)', () => {
+    expect(links('3+0.5')).toEqual([{ predId: 3, type: 'FS', lag: 0.5 }]);
+    expect(links('5SS-1.5d')).toEqual([{ predId: 5, type: 'SS', lag: -1.5 }]);
+    expect(links('3FS+.5, 4+2.0')).toEqual([
+      { predId: 3, type: 'FS', lag: 0.5 },
+      { predId: 4, type: 'FS', lag: 2 },
+    ]);
+    expect(formatLinks([{ predId: 3, type: 'FS', lag: 0.5 }, { predId: 5, type: 'SS', lag: -1.5 }])).toBe('3FS+0.5, 5SS-1.5');
+  });
+
   it('flags invalid tokens and FF/SF', () => {
-    for (const bad of ['abc', '3XX', '3+', '+2', '3.5', '3FS+2.5']) {
+    // A lag must be a whole number of half days: 2.3 or .25 would move a successor by a rounded amount (§5.2).
+    for (const bad of ['abc', '3XX', '3+', '+2', '3.5', '3FS+2.3', '3+.25', '3+1.5.5']) {
       expect(parsePredecessors(bad)).toEqual([{ raw: bad, error: 'bad' }]);
     }
     expect(parsePredecessors('3FF, 4sf+1').map((t) => t.error)).toEqual(['unsupported', 'unsupported']);

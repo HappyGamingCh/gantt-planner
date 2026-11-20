@@ -150,6 +150,12 @@
   font-weight: var(--fw-medium);
 }
 
+/* A start in the afternoon, a finish at midday (§7.9): after the label, quieter than it */
+.drawer-half {
+  color: var(--text-3);
+  font-weight: var(--fw-regular);
+}
+
 /* Inputs take the shared field skin (controls.css): only size, padding and font here */
 .drawer-input {
   width: 100%;
@@ -323,7 +329,7 @@ textarea.drawer-input {
 }
 
 .lag-input {
-  width: 44px;
+  width: 50px;
   padding: 0 6px;
   text-align: right;
 }

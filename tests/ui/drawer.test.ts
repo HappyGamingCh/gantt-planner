@@ -75,15 +75,21 @@ describe('drawer fields — leaving a field', () => {
     expect(durationProblem('  ')).toBe("Duration can't be empty — 0 makes a milestone");
   });
 
-  it('duration keeps the decimal point (#93): 1.5 is rounded to 2, never read as 15; text and negatives are refused', () => {
-    expect(durationProblem('1.5')).toBeNull(); // saved as 2 days, with a toast (parseDuration's note)
+  it('duration keeps the decimal point (#93): 1.5 is a day and a half, never 15; text and negatives are refused', () => {
+    expect(durationProblem('1.5')).toBeNull(); // saved as 1.5 days (half days, §7.9)
     expect(durationProblem('0,5')).toBeNull();
+    expect(durationProblem('1.3')).toBeNull(); // saved as 1.5, with a toast (parseDuration's note)
     expect(durationProblem('-1')).toBe("Duration can't be negative");
-    expect(durationProblem('5d')).toBe('Enter whole working days, e.g. 5');
-    expect(durationProblem('1.5.2')).toBe('Enter whole working days, e.g. 5');
+    expect(durationProblem('5d')).toBe('Enter working days, e.g. 5 or 0.5');
+    expect(durationProblem('1.5.2')).toBe('Enter working days, e.g. 5 or 0.5');
   });
 
-  it(`lag: whole working days within ±${MAX_DAYS}; blank = 0`, () => {
+  it(`lag: working days in steps of half a day within ±${MAX_DAYS}; blank = 0`, () => {
+    expect(parseLag('0.5')).toEqual({ lag: 0.5 });
+    expect(parseLag('-1.5')).toEqual({ lag: -1.5 });
+    expect(parseLag('2,5')).toEqual({ lag: 2.5 });
+    expect(parseLag('.5')).toEqual({ lag: 0.5 });
+    expect(parseLag('0.3')).toEqual({ message: 'Lag must be in steps of half a day, e.g. 0.5 or 1.5' });
     expect(parseLag('3')).toEqual({ lag: 3 });
     expect(parseLag('-2')).toEqual({ lag: -2 });
     expect(parseLag('')).toEqual({ lag: 0 });
@@ -91,8 +97,9 @@ describe('drawer fields — leaving a field', () => {
     expect('lag' in zero && Object.is(zero.lag, 0)).toBe(true); // never written as "-0"
     expect(parseLag(String(-MAX_DAYS))).toEqual({ lag: -MAX_DAYS });
     expect(parseLag(String(MAX_DAYS + 1))).toEqual({ message: `Lag must be between −${MAX_DAYS} and ${MAX_DAYS} working days` });
-    expect(parseLag('1-')).toEqual({ message: 'Lag must be a whole number of working days' });
-    expect(parseLag('-')).toEqual({ message: 'Lag must be a whole number of working days' });
+    expect(parseLag('1-')).toEqual({ message: 'Lag must be a number of working days, e.g. 2 or 0.5' });
+    expect(parseLag('-')).toEqual({ message: 'Lag must be a number of working days, e.g. 2 or 0.5' });
+    expect(parseLag('1.5.2')).toEqual({ message: 'Lag must be a number of working days, e.g. 2 or 0.5' });
   });
 });
 

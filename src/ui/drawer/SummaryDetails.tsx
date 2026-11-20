@@ -1,6 +1,6 @@
 // A major task in the drawer (SPEC §7.9): its calculated values, read-only; only its name and Remarks are the user's.
 import type { TaskResult } from '../../engine/types';
-import { formatDate, formatDays, formatVariance, plural } from '../common/format';
+import { formatDate, formatDays, formatVariance, plural, withHalf } from '../common/format';
 
 export function SummaryDetails({ r }: { r: TaskResult }) {
   const finish = r.summary?.actualFinish;
@@ -11,7 +11,8 @@ export function SummaryDetails({ r }: { r: TaskResult }) {
       <dl className="drawer-facts">
         <dt>Planned</dt>
         <dd>
-          {formatDate(r.plannedStart)} → {formatDate(r.plannedFinish)} · {formatDays(r.plannedDuration)}
+          {withHalf(formatDate(r.plannedStart), r.plannedStartPM, 'afternoon')} → {withHalf(formatDate(r.plannedFinish), r.plannedFinishMidday, 'midday')} ·{' '}
+          {formatDays(r.plannedDuration)}
         </dd>
         <dt>Progress</dt>
         <dd>{r.progress}%</dd>
@@ -19,7 +20,7 @@ export function SummaryDetails({ r }: { r: TaskResult }) {
         <dd>{r.actualStart ? `${formatDate(r.actualStart)} → ${finish ? formatDate(finish) : '…'}` : '—'}</dd>
         <dt>Forecast</dt>
         <dd>
-          {formatDate(r.forecastStart)} → {formatDate(r.forecastFinish)}
+          {withHalf(formatDate(r.forecastStart), r.forecastStartPM, 'afternoon')} → {withHalf(formatDate(r.forecastFinish), r.forecastFinishMidday, 'midday')}
           {r.variance !== 0 && (
             <>
               {' · '}

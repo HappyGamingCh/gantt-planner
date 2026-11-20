@@ -1,7 +1,7 @@
 // Progress metrics (SPEC §5.8). Every task weighs the same; milestones are excluded from percentages and task counts.
 import { SCHEDULE_STATE_BANDS } from '../config';
-import type { Calendar } from './calendar';
-import { addDays, minDate } from './dates';
+import { halfOf, type Calendar } from './calendar';
+import { addDays } from './dates';
 import { actualPctAt, mean, plannedPct } from './scurve';
 import type { AssigneeSummary, ISODate, Project, ProjectSummary, Resource, ScheduleState, TaskCalc } from './types';
 
@@ -34,11 +34,20 @@ export function summarizeProject(rows: readonly TaskCalc[], project: Project, ca
   let plannedStart = rows[0]?.plannedStart ?? project.projectStart;
   let plannedFinish = rows[0]?.plannedFinish ?? project.projectStart;
   let forecastFinish = rows[0]?.forecastFinish ?? project.projectStart;
+  // The same in halves (§5.1): the earliest planned start, the latest planned and forecast finish.
+  let ps = rows[0]?.ps ?? 0;
+  let pf = rows[0]?.pf ?? 0;
+  let ff = rows[0]?.ff ?? 0;
   for (const t of rows) {
     if (t.plannedStart < plannedStart) plannedStart = t.plannedStart;
     if (t.plannedFinish > plannedFinish) plannedFinish = t.plannedFinish;
     if (t.forecastFinish > forecastFinish) forecastFinish = t.forecastFinish;
+    ps = Math.min(ps, t.ps);
+    pf = Math.max(pf, t.pf);
+    ff = Math.max(ff, t.ff);
   }
+  // Once every task is completed the finish is an actual date, compared in days as a completed task's variance (§5.7).
+  const done = rows.length > 0 && rows.every((t) => t.calcFinish !== undefined);
 
   const actualAt = (d: ISODate) => mean(work.map((t) => actualPctAt(t, d, sd, cal)));
   const plannedAt = (d: ISODate) => mean(work.map((t) => plannedPct(t, d, cal)));
@@ -52,9 +61,9 @@ export function summarizeProject(rows: readonly TaskCalc[], project: Project, ca
     plannedStart,
     plannedFinish,
     forecastFinish,
-    finishVariance: cal.workdayDiff(plannedFinish, forecastFinish),
-    durationDays: rows.length === 0 ? 0 : cal.countWorkdays(plannedStart, plannedFinish),
-    elapsedDays: rows.length === 0 ? 0 : cal.countWorkdays(plannedStart, minDate(sd, plannedFinish)),
+    finishVariance: done ? cal.workdayDiff(plannedFinish, forecastFinish) : cal.halfDiff(pf, ff) / 2,
+    durationDays: rows.length === 0 ? 0 : cal.countHalves(ps, pf) / 2,
+    elapsedDays: rows.length === 0 ? 0 : cal.countHalves(ps, Math.min(halfOf(sd, true), pf)) / 2,
     actualPct,
     plannedPct: plannedPctAtSD,
     variancePts,

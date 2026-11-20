@@ -14,6 +14,37 @@ const result = run(
 const bar = taskOf(result, 1);
 const milestone = taskOf(result, 2);
 
+describe('drag by half days — SPEC §7.8', () => {
+  const half = run([makeTask(1, { plannedStart: '2026-11-02', plannedDuration: 1 })], { statusDate: '2026-11-01' }, holidays);
+  const day = taskOf(half, 1);
+
+  it('half-day steps where single days are shown, whole days otherwise', () => {
+    expect(dragDays(916, 900, 0, 0, 32, true, 0.5)).toBe(0.5);
+    expect(dragDays(907, 900, 0, 0, 32, true, 0.5)).toBe(0);
+    expect(dragDays(852, 900, 0, 0, 32, true, 0.5)).toBe(-1.5);
+    expect(dragDays(916, 900, 0, 0, 32, true)).toBe(1);
+    expect(Object.is(dragDays(899, 900, 0, 0, 32, true, 0.5), 0)).toBe(true); // never -0
+  });
+
+  it('a move by half a day starts the bar in the afternoon and finishes it at midday', () => {
+    expect(dragDates(day, 'move', 0.5, cal)).toEqual({ start: '2026-11-02', startPM: true, duration: 1, finish: '2026-11-03', finishMidday: true });
+    // Onto the holiday's afternoon: the next working morning.
+    expect(dragDates(day, 'move', 2.5, cal)).toEqual({ start: '2026-11-05', duration: 1, finish: '2026-11-05' });
+  });
+
+  it('a resize by half a day gives a half-day duration; at least half a day', () => {
+    expect(dragDates(day, 'resize', 0.5, cal)).toEqual({ start: '2026-11-02', duration: 1.5, finish: '2026-11-03', finishMidday: true });
+    expect(dragDates(day, 'resize', -0.5, cal)).toEqual({ start: '2026-11-02', duration: 0.5, finish: '2026-11-02', finishMidday: true });
+    expect(dragDates(day, 'resize', -3.5, cal)).toEqual({ start: '2026-11-02', duration: 0.5, finish: '2026-11-02', finishMidday: true });
+  });
+
+  it('a 0.5-day bar resized by whole days keeps its half', () => {
+    const short = taskOf(run([makeTask(1, { plannedStart: '2026-11-02', plannedDuration: 0.5 })], { statusDate: '2026-11-01' }, holidays), 1);
+    expect(dragDates(short, 'resize', 1, cal)).toEqual({ start: '2026-11-02', duration: 1.5, finish: '2026-11-03', finishMidday: true });
+    expect(dragDates(short, 'resize', -1, cal)).toEqual({ start: '2026-11-02', duration: 0.5, finish: '2026-11-02', finishMidday: true });
+  });
+});
+
 describe('drag on the Gantt — SPEC §7.8', () => {
   it('moving keeps the duration and snaps the start forward to a working day', () => {
     expect(dragDates(bar, 'move', 2, cal)).toEqual({ start: '2026-11-05', duration: 3, finish: '2026-11-07' }); // 4 Nov is a holiday

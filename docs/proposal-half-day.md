@@ -1,6 +1,6 @@
 # Proposal: half-day durations (0.5d)
 
-Status: **draft for the owner to read — nothing here is built yet.** Once agreed, it moves into SPEC.md (§4, §5, §7, §8) and §17.
+Status: **approved by the owner and built (2026-11-20).** The rules now live in SPEC.md (§2, §4.3, §4.6–§4.8, §5.1–§5.12, §7.7–§7.9, §8, §11.1) and its decisions in §17. Where the build differs from this draft, SPEC.md wins; the differences are listed at the end.
 
 ## Goal
 Planned Duration and link lags in steps of half a working day — 0.5, 1, 1.5, … — so that two short jobs can share one day: *Isolate blind* 0.5d → *Air ventilation* 0.5d both happen on Monday, one in the morning and one in the afternoon. A plan of whole days must calculate exactly as it does today.
@@ -43,3 +43,12 @@ The largest change since the major tasks: the calendar gets half-day arithmetic,
 2. Save updates the template's own whole-number rule on Planned Duration so Excel accepts 0.5 — OK?
 3. Actual dates stay whole days, and a completed task's variance is counted in days — OK?
 4. Dragging snaps to half days only at Day zoom — OK?
+
+The owner agreed to all four on 2026-11-20.
+
+## Built differently from this draft
+- **Remaining work** rounds up to a whole day for a task whose duration is whole days, as before, and to half a day only for a task with a half in its duration. Rounding every task to half days would have moved the forecasts and variances of existing whole-day plans, which must calculate exactly as before.
+- **Milestones** keep the whole-day rules exactly (a milestone after an SS link still sits at the end of its day); one after a task that finishes at midday sits at midday.
+- **Lags** that aren't a whole number of half days (`3+0.3`) are invalid notation, kept as typed; only Planned Duration is rounded.
+- **Drag** snaps to half days whenever the timeline shows single days: Day zoom, and Fit at 20 px a day or more.
+- A whole-day plan was checked against the previous engine on 19,000 random plans (Plan and Track mode, milestones, SS links, leads, holidays, working weeks, major tasks): every number the same.

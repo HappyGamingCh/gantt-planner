@@ -335,4 +335,20 @@ Full code audit after M5: 14 area finders (engine, Excel read/write, store, file
 
 ### Owner checks still open
 - Same as M5 (a real OneDrive file: permission prompt, Excel-locked file, conflict).
-- Read the half-day proposal and decide its four points.
+- ~~Read the half-day proposal and decide its four points.~~ Agreed 2026-11-20; built below.
+
+## Half-day durations (0.5d) · done 2026-11-20 (owner request)
+
+### Acceptance
+- [x] SPEC first (the owner agreed to `docs/proposal-half-day.md`): §2, §4.3, §4.6–§4.8, §5.1–§5.12, §7.7–§7.9, §8, §11.1, §12, §15, §17 (9 decisions)
+- [x] Engine in halves (§5.1): `snapHalf`, `addHalves`, `countHalves`, `halfDiff`; Planned Duration and lags in steps of 0.5; an afternoon start and a midday finish (`plannedStartPM`, `plannedFinishMidday`; the forecast's likewise); FS goes on in the next half; milestones keep the whole-day rules; forecast, variance (a completed task in days), critical path, S-curve, KPIs and major-task roll-ups count halves
+- [x] A plan of whole days calculates exactly as before: the half-day engine against the previous one on 19,000 random plans (≈ 200,000 tasks: Plan and Track mode, milestones, SS links, leads, holidays, working weeks, major tasks, actuals) gave every value the same; remaining work rounds to whole days for whole-day tasks (§17)
+- [x] Excel: 0.5 read and written; another decimal rounded to half a day ("Rounded to half a day"); exactly 12:00 in Planned Start = afternoon, in Planned Finish = midday; other times keep their meaning (a 19:00 night shift is a morning start, kept as typed while its day and half don't change); afternoon starts and midday finishes written at 12:00 (Planned and Forecast), hidden by the date format; lags `3+0.5`; Save replaces the old template's whole-number rule on Planned Duration with a decimal one and leaves a user's rule alone; the Read Me explains half days (§4.6–§4.8)
+- [x] App: Duration fields take 0.5 (another decimal rounded with a note); the lag field takes 0.5; bars start and end mid-column; the drawer marks "Start · afternoon" / "Finish · midday" and the forecast line; tooltips and Changes say afternoon / midday; drag snaps to half days where single days are shown, whole days at Week and Month; a typed start is a morning start; switching to Track keeps the halves as the baseline (§7.7–§7.9, §8)
+- [x] `npm run typecheck` clean; `npm test` 72 files, 880 tests (also with `TZ=UTC` and `CI` set), coverage 99.39 % (engine 99.73 %); build 1.75 MB
+- [x] `file://` in headless Chrome and Edge, 17/17 checks each with an older-format workbook (0.5 durations typed in Excel, a 19:00 start, a 12:00 start, the old whole-number rule): 0.5-day bars half a column wide at Day zoom and sharing a day, the 12:00 start in the afternoon, the 19:00 start in the morning, "Start · afternoon" in the drawer, 1.5 typed in the drawer, a half-day drag (tooltip "2 Nov 2026 afternoon → 4 Nov 2026 midday"), a whole-day drag at Week zoom keeping the afternoon, Undo, Save through the handle, no network, no console errors; Print Gantt and the report's appendix draw the half days (6/6); the Settings check still 22/22
+- [x] The saved files read back with no issue and no change; in Excel 365 they open without repair, the Planned Start shows `02-Nov-26` while holding 12:00, and the Planned Duration rule accepts 1.5 (the older file refuses it)
+
+### Owner checks still open
+- Same as M5 (a real OneDrive file: permission prompt, Excel-locked file, conflict).
+- Try half days on a copy of a real plan: two 0.5-day steps on one day, a drag at Day zoom, Save, and the file in Excel.

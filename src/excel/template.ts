@@ -32,18 +32,36 @@ const dateRule: DataValidation = {
   formulae: [excelDate('1950-01-01'), excelDate('2199-12-31')],
   ...error('Date', 'Enter a date, for example 1-Oct-26.'),
 };
+/** Planned Duration: working days in steps of half a day (§4.3); decimal, so Excel accepts 0.5. */
+export const DURATION_RULE: DataValidation = {
+  type: 'decimal',
+  operator: 'greaterThanOrEqual',
+  allowBlank: true,
+  formulae: [0],
+  ...error('Planned Duration', 'Enter working days, in steps of 0.5 (0 = milestone).'),
+};
+
+/**
+ * The whole-number rule templates put on Planned Duration before half days (§4.8), as ExcelJS reads it back: Save
+ * replaces exactly this rule, never one the user made.
+ */
+export function isOldDurationRule(rule: DataValidation | undefined): boolean {
+  return (
+    rule?.type === 'whole' &&
+    rule.operator === 'greaterThanOrEqual' &&
+    rule.formulae?.length === 1 &&
+    Number(rule.formulae[0]) === 0 &&
+    rule.errorTitle === 'Planned Duration' &&
+    rule.error === 'Enter a whole number of working days (0 = milestone).'
+  );
+}
+
 const VALIDATION: Partial<Record<TaskField, DataValidation>> = {
   plannedStart: dateRule,
   plannedFinish: dateRule,
   actualStart: dateRule,
   actualFinish: dateRule,
-  plannedDuration: {
-    type: 'whole',
-    operator: 'greaterThanOrEqual',
-    allowBlank: true,
-    formulae: [0],
-    ...error('Planned Duration', 'Enter a whole number of working days (0 = milestone).'),
-  },
+  plannedDuration: DURATION_RULE,
   level: {
     type: 'whole',
     operator: 'between',

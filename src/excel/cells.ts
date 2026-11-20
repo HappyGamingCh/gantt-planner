@@ -205,13 +205,31 @@ export function isPercentFormat(numFmt: string | undefined): boolean {
   return !!numFmt && numFmt.replace(/"[^"]*"|\[[^\]]*\]|\\./g, '').includes('%');
 }
 
-/** ISO date → the Date ExcelJS writes as that calendar day. */
-export function excelDate(d: ISODate): Date {
-  return new Date(Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10))));
+/**
+ * ISO date → the Date ExcelJS writes as that calendar day. A written date with its half (§4.8: `2026-11-03 afternoon`,
+ * `2026-11-03 midday`) gets the time 12:00, which a date format hides.
+ */
+export function excelDate(d: string): Date {
+  const date = new Date(Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10))));
+  if (d.length > 10) date.setUTCHours(12);
+  return date;
 }
 
-/** A date cell on `day`, perhaps with a time of day (a night-shift start at 19:00): the app plans whole days, so
- * Save keeps such a cell as it is while its day is unchanged. */
-export function keepsTime(original: CellValue, day: ISODate): boolean {
-  return original instanceof Date && !Number.isNaN(original.getTime()) && utcDate(original) === day;
+/** Exactly 12:00 (§4.7): a date cell at noon, or a serial number ending in .5. Any other time is not a half day. */
+export function isNoon(value: CellValue): boolean {
+  const v = plainValue(value);
+  if (v instanceof Date) {
+    return !Number.isNaN(v.getTime()) && v.getUTCHours() === 12 && v.getUTCMinutes() === 0 && v.getUTCSeconds() === 0 && v.getUTCMilliseconds() === 0;
+  }
+  return typeof v === 'number' && Number.isFinite(v) && v - Math.floor(v) === 0.5;
+}
+
+/**
+ * A date cell on the written date's day, perhaps with a time of day (a night-shift start at 19:00): Save keeps such a
+ * cell as it is while its day is unchanged — and, with `halves` (Planned Start, §4.8), while 12:00 still says whether
+ * the task starts in the afternoon.
+ */
+export function keepsTime(original: CellValue, written: string, halves = false): boolean {
+  if (!(original instanceof Date) || Number.isNaN(original.getTime()) || utcDate(original) !== written.slice(0, 10)) return false;
+  return !halves || isNoon(original) === written.length > 10;
 }

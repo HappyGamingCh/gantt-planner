@@ -1,5 +1,5 @@
 // Major tasks (SPEC §5.12): the outline the Levels describe, and each major task rolled up from its leaf tasks.
-import type { Calendar } from './calendar';
+import { isAfternoon, type Calendar } from './calendar';
 import { mean } from './scurve';
 import { taskStatus, taskVariance } from './status';
 import type { Change, ISODate, Task, TaskCalc, TaskResult } from './types';
@@ -77,6 +77,11 @@ export function rollUp(
   const plannedStart = first(leaves.map((l) => l.r.plannedStart))!;
   const plannedFinish = last(leaves.map((l) => l.r.plannedFinish))!;
   const forecastFinish = last(leaves.map((l) => l.r.forecastFinish))!;
+  // The same in halves (§5.1): a major task starts in the afternoon or finishes at midday when its tasks do.
+  const ps = Math.min(...leaves.map((l) => l.calc.ps));
+  const pf = Math.max(...leaves.map((l) => l.calc.pf));
+  const fs = Math.min(...leaves.map((l) => l.calc.fs));
+  const ff = Math.max(...leaves.map((l) => l.calc.ff));
   const milestonesOnly = leaves.every((l) => l.calc.isMilestone);
   const work = leaves.filter((l) => !l.calc.isMilestone);
   const done = leaves.every((l) => l.calc.calcFinish !== undefined);
@@ -88,7 +93,7 @@ export function rollUp(
     else if (actualFinish !== undefined) actualDuration = Math.max(1, cal.countWorkdays(actualStart, actualFinish));
     else if (actualStart <= statusDate) actualDuration = Math.max(1, cal.countWorkdays(actualStart, statusDate));
   }
-  const variance = taskVariance(plannedFinish, forecastFinish, cal);
+  const variance = taskVariance(pf, ff, done, cal);
   const started = actualStart !== undefined || leaves.some((l) => l.calc.progress > 0);
   const floats = leaves.map((l) => l.r.totalFloat).filter((f): f is number => f !== undefined);
   return {
@@ -96,8 +101,9 @@ export function rollUp(
     level,
     summary: { tasks: leaves.length, actualFinish },
     plannedStart,
-    plannedDuration: milestonesOnly && plannedStart === plannedFinish ? 0 : cal.countWorkdays(plannedStart, plannedFinish),
+    plannedDuration: milestonesOnly && plannedStart === plannedFinish ? 0 : cal.countHalves(ps, pf) / 2,
     plannedFinish,
+    ...halfFlags(ps, pf, fs, ff),
     progress: work.length > 0 ? Math.round(mean(work.map((l) => l.calc.progress))) : done ? 100 : 0,
     actualStart,
     actualDuration,
@@ -111,5 +117,15 @@ export function rollUp(
     plannedPctAtSD: work.length > 0 ? mean(work.map((l) => l.r.plannedPctAtSD)) : 0,
     totalFloat: floats.length > 0 ? Math.min(...floats) : undefined,
     critical: leaves.some((l) => l.r.critical),
+  };
+}
+
+/** TaskResult's half-day flags (§5.1), set only when true: a start in the afternoon, a finish at midday. */
+export function halfFlags(ps: number, pf: number, fs: number, ff: number): Pick<TaskResult, 'plannedStartPM' | 'plannedFinishMidday' | 'forecastStartPM' | 'forecastFinishMidday'> {
+  return {
+    ...(isAfternoon(ps) ? { plannedStartPM: true } : {}),
+    ...(!isAfternoon(pf) ? { plannedFinishMidday: true } : {}),
+    ...(isAfternoon(fs) ? { forecastStartPM: true } : {}),
+    ...(!isAfternoon(ff) ? { forecastFinishMidday: true } : {}),
   };
 }

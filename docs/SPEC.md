@@ -36,16 +36,17 @@ Gantt Planner is a lightweight, offline, single-file web app — a simplified MS
 |---|---|
 | Working day | A day whose weekday is one of the project's working days (Project › `Working Days`; every day of the week, weekends included, when it is blank) and that is not listed in the `Holidays` sheet |
 | Non-working day | Any other day: a holiday, or a weekday the project doesn't work (e.g. Sunday in a Mon–Sat project) |
+| Half day | A working day has two halves, morning and afternoon. Durations and lags count working days in steps of half a day (0.5), so a task can start in the afternoon and finish at midday (§5.1) |
 | Planned (= Baseline) | The agreed plan: Planned Start / Duration / Finish. Used for the planned S-curve and for variance |
 | Actual | What really happened: Progress, Actual Start, Actual Finish |
 | Status date (SD) | The "data date": progress is reported **as of the end of** this day. Set in the header |
 | R | The first working day **after** SD — when remaining work can start |
 | Forecast | Expected start/finish of each task given actuals, SD and dependencies |
-| Variance (d) | Working days between Planned Finish and Actual/Forecast Finish. Positive = late |
+| Variance (d) | Working days (in steps of 0.5) between Planned Finish and Actual/Forecast Finish. Positive = late |
 | Variance (pts) | Actual % − planned % at the status date, in percentage points (shown to 0.1). Negative = behind |
 | SPI | Schedule performance index = actual % ÷ planned %; below 1 = behind plan |
 | FS / SS | Link types: finish-to-start (starts after the predecessor finishes) / start-to-start (can start once the predecessor starts) |
-| Lag | Working days added to a link; negative = lead (overlap) |
+| Lag | Working days added to a link, in steps of 0.5; negative = lead (overlap) |
 | Milestone | A task with Planned Duration = 0 |
 | Major task | A row that groups the rows under it, like a summary task in MS Project: the rows below it with a deeper Level are its tasks. Its dates, duration and progress are calculated from them (§5.12) |
 | Level | A row's depth in the outline: 1 = top level, 2 = a task of a level-1 major task, and so on (Tasks column `Level`) |
@@ -162,18 +163,18 @@ Columns are located **by header name** (case- and whitespace-insensitive, aliase
 | 3 | Task | Task Name, Name | text | Input | Blank but row has data → `(Untitled)` + warning |
 | 4 | Assigned | Assigned To, Resource, Resources, PIC | text | Input | Several names separated by `,` or `;` |
 | 5 | Predecessors | Predecessor, Pred | text | Input | Notation in §5.2 |
-| 6 | Planned Start | Start, Plan Start | date | Input **or** Calc | Calc when the task has predecessors; input for root tasks |
-| 7 | Planned Duration | Duration, Plan Duration | integer ≥ 0 (working days) | Input | 0 = milestone |
-| 8 | Planned Finish | Finish, Plan Finish | date | Calc | |
+| 6 | Planned Start | Start, Plan Start | date | Input **or** Calc | Calc when the task has predecessors; input for root tasks. The time 12:00 = starts in the afternoon (§4.7) |
+| 7 | Planned Duration | Duration, Plan Duration | number ≥ 0 (working days, steps of 0.5) | Input | 0 = milestone; 0.5 = half a day |
+| 8 | Planned Finish | Finish, Plan Finish | date | Calc | The time 12:00 = finishes at midday |
 | 9 | Progress (%) | Progress, % Complete, %Complete | integer 0–100 | Input | Blank → 0 |
 | 10 | Actual Start | | date | Input | |
 | 11 | Actual Finish | | date | Input | |
 | 12 | Actual Duration | | integer | Calc | |
 | 13 | Successors | Successor | text | Calc | |
 | 14 | Status | | text | Calc | `Not Started` / `In Progress` / `Late` / `Completed` |
-| 15 | Forecast Start | | date | Calc | |
-| 16 | Forecast Finish | | date | Calc | |
-| 17 | Variance (d) | Variance | integer | Calc | Positive = late |
+| 15 | Forecast Start | | date | Calc | 12:00 = afternoon, as Planned Start |
+| 16 | Forecast Finish | | date | Calc | 12:00 = midday, as Planned Finish |
+| 17 | Variance (d) | Variance | number | Calc | Positive = late; steps of 0.5 |
 | 18 | Critical | | `Yes` / blank | Calc | Filled from M5; blank before |
 | 19 | Remarks | Remark, Notes, Comment, Comments | text | Input | |
 
@@ -184,7 +185,7 @@ Columns are located **by header name** (case- and whitespace-insensitive, aliase
 - Freeze the header row and columns A–C (ID, Level, Task). Autofilter on the header row; on save it widens to columns added on the right (never added back if the user removed it).
 - Predecessors cells use the Text format (`@`): the template sets it on the column, and Save sets it on task cells and the column when they are General. In a General cell Excel turns `5,120` into the number 5120 and `3-1` into a date.
 - Column widths: ID 6, Level 7, Task 40, Assigned 22, Predecessors 14, dates 12, numbers 10, Status 13, Remarks 40.
-- Data validation: Progress decimal 0–100 (accepts 50 or 50%; Excel stores 50% as 0.5, which the reader turns back into 50, §4.7); Planned Duration whole number ≥ 0; Level whole number 1–8; date columns = date.
+- Data validation: Progress decimal 0–100 (accepts 50 or 50%; Excel stores 50% as 0.5, which the reader turns back into 50, §4.7); Planned Duration decimal ≥ 0 (the reader rounds to half days, §4.7); Level whole number 1–8; date columns = date.
 
 ### 4.4 `Resources` sheet
 | Name | Type | Color |
@@ -211,9 +212,9 @@ No `Date` header in row 1 (a renamed header, or a title row above it) while the 
 Short, plain English:
 1. This file is the data for Gantt Planner. Open `gantt-planner.html` and click **Open** to use it.
 2. You may edit dark-header columns in Excel. Grey-header columns are calculated and will be overwritten.
-3. Predecessors notation: `3` (finish-to-start), `3SS` (start-to-start), `3+2` or `3FS+2` (2-day lag), `3SS-1` (1-day lead). Separate with a comma and a space (`3, 120`).
+3. Predecessors notation: `3` (finish-to-start), `3SS` (start-to-start), `3+2` or `3FS+2` (2-day lag), `3SS-1` (1-day lead), `3+0.5` (half a day). Separate with a comma and a space (`3, 120`).
 4. Tasks with predecessors get their Planned Start calculated. To delay a task, add lag (e.g. `3+5`).
-5. Planned Duration wins over Planned Finish when they disagree.
+5. Planned Duration wins over Planned Finish when they disagree. Durations and lags may be half days (`0.5`, `1.5`). A start in the afternoon or a finish at midday is stored as the time 12:00 in the date (Excel shows only the date).
 6. Gantt Planner can't keep charts, pivot tables, text boxes, shapes, sparklines or Excel tables anywhere in this file: saving removes them (a table's cells stay, as a normal range). Please don't add images, formulas or merged cells to the `Tasks` sheet.
 7. Close this file in Excel before saving from Gantt Planner. Use OneDrive version history to restore older versions.
 8. Assigned: separate several names with commas. Working days: the days in Working Days in the `Project` sheet (e.g. Mon-Sat; blank = every day), except the dates in the `Holidays` sheet.
@@ -222,7 +223,8 @@ Short, plain English:
 
 ### 4.7 Reading rules
 - **Dates** — accept: Excel date cells (ExcelJS gives a JS `Date` at UTC midnight → convert with `getUTCFullYear/Month/Date`), Excel serial numbers (counted from 1904-01-01 when the workbook uses the 1904 date system), text `YYYY-MM-DD`, text `d/m/yyyy` (day first), text `d-MMM-yy` / `d MMM yyyy`, also with a Thai month (`ม.ค.`–`ธ.ค.` with or without dots, or the full name: `2 พ.ย. 2569`, `2 พฤศจิกายน 2569`). In a date cell or date text, a year from 2493 to 2742 is a Buddhist-era year: 543 is subtracted (`corrected`, "Buddhist-era year converted"); with a Thai month a 2-digit year is Buddhist-era (`69` → 2569 → 2026). A date must fall in the years 1950–2199. A serial number outside Excel's range (above 2958465, e.g. a 10-digit work-order number) is unparseable, never an error; a date cell too large for Excel shows as `#####` in the message. Unparseable → warning (`W_BAD_DATE`; `W_BAD_HOLIDAY` in Holidays), treated as blank, original text kept on save (§4.8).
-- **Numbers** — accept numbers or numeric text. A number shown with a date format (ExcelJS hands it over as a date before 1950, e.g. a duration of 5 shown as `05-Jan-00`) is read as that number; a real date (1950 or later) in a number column stays unparseable. Progress: if value ≤ 1 and the cell has a percent number format (a `%` outside quoted text, `[..]` sections and escaped characters: `0%` is one, `0"%"` is not) → multiply by 100; text like `50%` means 50. Round to integer, clamp 0–100 (warning if clamped). Planned Duration: rounded to a whole number (`corrected`); a day unit after the number is read too — `5d`, `5 d`, `1 day`, `5 days`, `5 วัน`, and MS Project's estimated `5 days?` (case-insensitive) — as that number of working days (`corrected`: "Unit removed"). Other units (weeks, hours, months, elapsed days such as `5 edays`), words, a negative duration, or a duration above 3650 working days (`MAX_DAYS`) → `W_BAD_NUMBER`, treated as blank (Progress: 0), original text kept on save (§4.8).
+- **Half days in dates** — a Planned Start whose time is exactly 12:00 (a date cell, or a serial number ending in .5) starts in the afternoon; a Planned Finish at exactly 12:00 finishes at midday (§5.1). Any other time keeps the date's meaning: a 19:00 night-shift start or MS Project's 08:00 is a morning start, a 17:00 finish is the end of the day, so a file from before half days opens unchanged. Actual dates are whole days: their time is ignored.
+- **Numbers** — accept numbers or numeric text. A number shown with a date format (ExcelJS hands it over as a date before 1950, e.g. a duration of 5 shown as `05-Jan-00`) is read as that number; a real date (1950 or later) in a number column stays unparseable. Progress: if value ≤ 1 and the cell has a percent number format (a `%` outside quoted text, `[..]` sections and escaped characters: `0%` is one, `0"%"` is not) → multiply by 100; text like `50%` means 50. Round to integer, clamp 0–100 (warning if clamped). Planned Duration: rounded to the nearest half day (`corrected`, "Rounded to half a day": 2.2 → 2, 2.3 → 2.5); a day unit after the number is read too — `5d`, `5 d`, `1 day`, `5 days`, `5 วัน`, and MS Project's estimated `5 days?` (case-insensitive) — as that number of working days (`corrected`: "Unit removed"). Other units (weeks, hours, months, elapsed days such as `5 edays`), words, a negative duration, or a duration above 3650 working days (`MAX_DAYS`) → `W_BAD_NUMBER`, treated as blank (Progress: 0), original text kept on save (§4.8).
 - **ID** — not a whole number from 1 to 999,999,999,999 (12 digits, `MAX_ID`) → treated as blank: the task gets the next free ID (`corrected`).
 - **Formula cells** — use the cached result. Tasks: add one info issue (`W_FORMULA`) that lists where the formulas are: for each column its header as written in the file and its cells, e.g. `Manhours F2:F40, F151` (up to 3 columns, then "and N more columns"; up to 3 ranges per column, then "…"; formulas in blank rows count too). If every formula cell is in one task's row, the issue points to that task. Project sheet: a Project Start or Status Date that is exactly `=TODAY()` or `=NOW()` means today, as Excel shows it; any other formula keeps its cached value. Either way a `corrected` Change records the formula (from `=TODAY()`), because Save writes the value (§4.8).
 - **Text** — trim; collapse repeated spaces in task names, assignee names and resource names. The app shows a task name on one line: line breaks (Alt+Enter) become spaces. The cell keeps its line breaks (§4.8): a name whose lines are already tidy is not a change; otherwise each line is trimmed with single spaces and blank lines are dropped (`corrected`, "Spaces tidied", to the tidied lines). In `Assigned` a line break is not a separator: inside a name it becomes a space (Change reason 'Line break read as a space; separate names with ","'); next to a `,` or `;` it is only a space ('Names separated with ", "').
@@ -241,8 +243,9 @@ Short, plain English:
 - Ranges that covered the whole block of task rows cover it again after the save, as Excel grows or shrinks a range when rows are inserted or deleted inside it: conditional formats and the print area (grow and shrink), data validation (grow only). Other ranges are left alone.
 - Input values the app could not parse (bad dates, bad numbers, invalid predecessor notation) are written back **unchanged** so user text is never lost — in input (dark-header) columns, until the user enters a value for that field in the app. Values the app derives don't count: Planned Start and Planned Duration stay unparsed (`Task.unparsed`) through the planned values stored after every edit (§17) and the switch to Track; a cell edit, a drawer edit, a Planned Finish edit (it sets the duration) or a bar drag clears them. Calculated (grey-header) columns, Planned Finish included, are always overwritten.
 - A text cell (Task, Assigned, Predecessors, Remarks) whose text the app didn't change is written back as it was, so rich text, hyperlinks (web and file links; ExcelJS drops links to places in the workbook, §3.5) and numbers survive. A Task cell with line breaks (Alt+Enter) keeps them while the app's name is the same text on one line: as it was if its lines are tidy, else with each line trimmed, single-spaced and blank lines dropped (§4.7).
-- **Dates:** write `new Date(Date.UTC(y, m - 1, d))` with number format `dd-mmm-yy`, unless the cell already has a date format. An input date cell (Planned Start, Actual Start, Actual Finish) holding a date with a time of day is written back unchanged while its day matches the app's value; the app plans whole days.
+- **Dates:** write `new Date(Date.UTC(y, m - 1, d))` with number format `dd-mmm-yy`, unless the cell already has a date format. A start in the afternoon (Planned Start, Forecast Start) and a finish at midday (Planned Finish, Forecast Finish) are written with the time 12:00, which the date format hides (§4.7). An input date cell (Planned Start, Actual Start, Actual Finish) holding a date with a time of day is written back unchanged while its day, and for Planned Start its half, match the app's value (a 19:00 start is a morning start).
 - **Numbers:** a number (ID, Planned Duration, Progress, Actual Duration, Variance (d)) written into a date-formatted cell gets the `General` format, so Excel shows `5`, not `05-Jan-00`. Unparsed text written back unchanged keeps its format.
+- **Planned Duration validation:** files made before half days carry the template's whole-number rule on Planned Duration ("Enter a whole number of working days (0 = milestone)."), which makes Excel refuse `0.5`. Save replaces that rule, and only where it is exactly the template's, with the current template's decimal rule; a rule the user made is never changed.
 - **Numbers too large for a date:** a cell in any sheet with a date format and a number above Excel's last day (a 10-digit work-order number) loads as an invalid date, and its number is lost at load. Save empties it (a formula keeps its formula, without the cached value), because written back it would make a file Excel can't open. The reader warns (`W_DATE_TOO_LARGE`) and the first Save asks first (§3.5).
 - **Progress:** a cell with a percent number format (§4.7) gets a fraction (50 → 0.5) so it still shows 50%; `0"%"` gets 50.
 - **Status cell fill:** Completed `#DCFCE7`, In Progress `#DBEAFE`, Late `#FEE2E2`, Not Started none.
@@ -270,6 +273,15 @@ All functions are pure and unit-tested (§12). Dates are ISO strings `YYYY-MM-DD
 | `countWorkdays(a, b)` | Number of workdays in `[a, b]` inclusive; 0 if `b < a` |
 | `workdayDiff(a, b)` | Signed: `b > a` → `countWorkdays(a+1day, b)`; `b < a` → `−countWorkdays(b+1day, a)`; else 0 |
 
+**Half days.** The engine counts in halves: a half is `day number × 2`, `+ 1` for the afternoon. A task's start is the half it starts in and its finish is the half it finishes in, so a 1-day task that starts on a morning finishes in that afternoon, and a 0.5-day task starts and finishes in the same half. Durations, lags, variances and floats in days are halves ÷ 2.
+
+| Function | Definition |
+|---|---|
+| `snapHalf(h)` | `h` if its day is a workday, else the morning of the next workday |
+| `addHalves(h, n)` | From `h` — on a non-working day, the same half of the next workday, as `addWorkdays` snaps a date (a finish on a Sunday counts as Monday's end) — move `n` working halves forward (n > 0) or backward (n < 0) |
+| `countHalves(a, b)` | Working halves in `[a, b]` inclusive; 0 if `b < a` |
+| `halfDiff(a, b)` | Signed: `2 × workdayDiff(day of a, day of b)` plus b's half less a's (morning 0, afternoon 1), so two finishes (or two starts) are exactly twice `workdayDiff` apart |
+
 Date arithmetic clamps its results to the years 0100–9999, so an absurd span gives an absurd but well-formed date instead of an error (§10: never a crash).
 
 ### 5.2 Predecessor notation (`engine/links.ts`)
@@ -278,13 +290,14 @@ list  := item ( ("," | ";" | line break) item )*
 item  := ID [TYPE] [LAG]          whitespace between ID, TYPE and LAG ignored, case-insensitive
 ID    := digits
 TYPE  := "FS" | "SS"              default FS
-LAG   := ("+" | "-") digits ["d"] working days; negative = lead; at most 3650 (MAX_DAYS)
+LAG   := ("+" | "-") number ["d"] working days in steps of 0.5 (digits, or digits ".5" / ".0");
+                                  negative = lead; at most 3650 (MAX_DAYS)
 ```
-Examples: `3` → FS lag 0 · `3+2` → FS lag 2 · `3FS+2` → FS lag 2 · `5SS` → SS lag 0 · `5ss-1d` → SS lag −1 · `3 SS + 2` → SS lag 2 · `3, 5SS+2` · `3` and `4` on two lines of one cell (Alt+Enter) → `3, 4`.
+Examples: `3` → FS lag 0 · `3+2` → FS lag 2 · `3FS+2` → FS lag 2 · `5SS` → SS lag 0 · `5ss-1d` → SS lag −1 · `3 SS + 2` → SS lag 2 · `3+0.5` → FS lag 0.5 (half a day) · `5SS-1.5d` → SS lag −1.5 · `3, 5SS+2` · `3` and `4` on two lines of one cell (Alt+Enter) → `3, 4`.
 
-**Canonical output** (keeps the user's order): FS lag 0 → `3` · FS lag ≠ 0 → `3FS+2` · SS lag 0 → `5SS` · SS lag ≠ 0 → `5SS-1`; joined with `, `.
+**Canonical output** (keeps the user's order): FS lag 0 → `3` · FS lag ≠ 0 → `3FS+2`, `3FS+0.5` · SS lag 0 → `5SS` · SS lag ≠ 0 → `5SS-1`; joined with `, `.
 
-**Errors** (issue + token ignored for calculation): invalid token — including whitespace between two numbers (`3 4` is never read as `34`; write `3, 4`) and a lag beyond ±3650 working days; `FF`/`SF` ("not supported in v1"); reference to a missing ID; self-reference; duplicate link to the same predecessor (keep first; warning `W_DUP_LINK`). Empty items (e.g. a trailing comma) are ignored silently. If any token has one of these issues, the cell text is written back unchanged; otherwise it is written in canonical form. Links inside a cycle are valid notation: their text is canonicalized and they are only ignored for calculation (§5.3).
+**Errors** (issue + token ignored for calculation): invalid token — including whitespace between two numbers (`3 4` is never read as `34`; write `3, 4`) a lag that isn't a whole number of half days (`3+0.3`, `3+.25`) and a lag beyond ±3650 working days; `FF`/`SF` ("not supported in v1"); reference to a missing ID; self-reference; duplicate link to the same predecessor (keep first; warning `W_DUP_LINK`). Empty items (e.g. a trailing comma) are ignored silently. If any token has one of these issues, the cell text is written back unchanged; otherwise it is written in canonical form. Links inside a cycle are valid notation: their text is canonicalized and they are only ignored for calculation (§5.3).
 
 **Successors** are derived: for task T, list every task S that links to T, formatted from S's link (e.g. `5, 7SS+2`), sorted by S's row order.
 
@@ -309,18 +322,22 @@ Every value that differs from the file is recorded as `Change { taskId, field, f
 - **Plan mode:** planned values are fully derived from inputs (root-task Planned Start, Planned Duration, links) on every recompute.
 - **Track mode:** stored planned values are **frozen**; only blank planned fields are derived with the same rules. Exception: tasks tagged `isNewThisSession` are computed as in Plan mode. Switching Track → Plan triggers a full recompute; if any planned date changes, show a toast "Plan recalculated — N tasks moved" with a link to the change list.
 
-**Per task, in topological order:**
+**Per task, in topological order** — in halves (§5.1): PS is the half the task starts in, PF the half it finishes in, and a Planned Duration of `PD` days takes `2 × PD` halves:
 1. **Planned Start (PS)**
    - Has valid links → `PS = max(linkStart(link))` over its links, where
-     - FS: `addWorkdays(pred.PF, gap + lag)`; `gap = 1`, except `gap = 0` when this task is a milestone (it sits at the end of its predecessor's finish day) or when the predecessor is a **start milestone**: a milestone with no predecessors, or whose predecessors are all start milestones (it sits at the start of its day, e.g. "Shutdown"). So `A → milestone → B` starts B on the same day as `A → B`.
-     - SS: `addWorkdays(pred.PS, lag)`
+     - FS: `addHalves(pred.PF, gap + 2 × lag)`; `gap = 1` (the next half: the morning after a predecessor that finishes at the end of a day, the afternoon after one that finishes at midday), except `gap = 0` when this task is a milestone (it sits at the end of its predecessor's finish day) or when the predecessor is a **start milestone**: a milestone with no predecessors, or whose predecessors are all start milestones (it sits at the start of its day, e.g. "Shutdown"). So `A → milestone → B` starts B on the same day as `A → B`.
+     - SS: `addHalves(pred.PS, 2 × lag)`
      - A blank Planned Duration counts as non-milestone here.
      - If the file had a different PS → `corrected` ("Driven by predecessors — use lag to delay").
-   - Root task → `PS = snapForward(user PS ?? Project Start)`; if snapped → `corrected` ("Moved to next working day").
-2. **Planned Duration (PD)** — blank: if the file has PF ≥ PS → `PD = countWorkdays(PS, PF)` (`filled`); else `PD = 1` (`filled` + warning). A PD above 3650 working days (`MAX_DAYS`) that reaches the engine is invalid: `W_BAD_NUMBER`, then treated as blank.
-3. **Planned Finish (PF)** — `PD ≥ 1 ? addWorkdays(PS, PD − 1) : PS`. If the file had a different non-blank PF → `corrected` ("Recalculated from duration").
+   - Root task → `PS = snapHalf(user PS ?? Project Start)`: the morning of that day, or its afternoon when the Planned Start cell holds 12:00 (§4.7) or the bar was dragged there (§7.8); a non-working day moves to the next working morning → `corrected` ("Moved to next working day"). Typing a Planned Start in the app starts the task in the morning.
+2. **Planned Duration (PD)** — in steps of 0.5. Blank: if the file has PF ≥ PS → `PD = countHalves(PS, PF) / 2` — 1 when no working half lies between them (`filled`); else `PD = 1` (`filled` + warning). A PD above 3650 working days (`MAX_DAYS`) that reaches the engine is invalid: `W_BAD_NUMBER`, then treated as blank.
+3. **Planned Finish (PF)** — `PD > 0 ? addHalves(PS, 2 × PD − 1) : PS`. If the file had a different non-blank PF (its day, or midday vs end of day) → `corrected` ("Recalculated from duration").
+
+**Milestones in halves.** A milestone has no length; where it sits keeps the whole-day rules exactly. A start milestone sits at the start of its half (PS = PF). Any other milestone sits at the end of its finish half PF: the latest of an FS link's `addHalves(pred.PF, 2 × lag)` (so after a task that finishes at midday it sits at midday) and, for an SS link or an FS link from a start milestone, the end of that link's day (as before, an SS milestone sits at the end of its day); its PS is the morning of that day, which its SS successors count from. In Track mode a stored milestone keeps its stored PS and PF; Planned Finish 12:00 places it at midday.
 
 Example (2026): PS Mon 2 Nov, PD 5 → PF Fri 6 Nov. Successor with `FS` → PS Sat 7 Nov. Successor with `SS+2` → PS Wed 4 Nov. A milestone with `FS` after the first task → Fri 6 Nov, and a task with `FS` after that milestone → Sat 7 Nov. A start milestone on Mon 2 Nov → its `FS` successors start Mon 2 Nov.
+
+Half days: A, PD 0.5, PS Mon 2 Nov morning → PF Mon 2 Nov (midday). B, PD 0.5, `FS` after A → Mon 2 Nov afternoon to the end of that day; C, PD 1, `FS` after B → Tue 3 Nov. D, PD 1.5 from Mon 2 Nov → PF Tue 3 Nov midday; its `FS` successor starts Tue 3 Nov in the afternoon; `3+0.5` after D → Wed 4 Nov morning. A milestone `FS` after A → Mon 2 Nov at midday, and a task `FS` after that milestone starts Mon 2 Nov in the afternoon.
 
 ### 5.5 Actual rules
 | Situation | Behaviour |
@@ -339,24 +356,27 @@ Example (2026): PS Mon 2 Nov, PD 5 → PF Fri 6 Nov. Successor with `FS` → PS 
 
 The "for calculation" substitutes are **never written** to Excel.
 
+Actual dates are whole days (progress is reported per day): an actual start is that day's morning and an actual finish the end of that day; Actual Duration counts days.
+
 ### 5.6 Forecast
-Let `R = nextWorkday(SD)`. Process in topological order.
+Let `R = nextWorkday(SD)` (its morning). Process in topological order, in halves (§5.1).
 
 | Task state | Forecast Start (FS′) | Forecast Finish (FF′) |
 |---|---|---|
-| Completed (AF set, or treated as completed) | AS | AF |
-| In progress (AS set, no AF) | AS | `addWorkdays(R, remaining − 1)` where `remaining = max(1, ceil(PD × (100 − Progress) / 100))` |
-| Not started | `max(snapForward(PS), R, constraints)` | `PD ≥ 1 ? addWorkdays(FS′, PD − 1) : FS′` |
+| Completed (AF set, or treated as completed) | AS (morning) | AF (end of day) |
+| In progress (AS set, no AF) | AS (morning) | `addHalves(R, remaining − 1)`, `remaining` in halves = `PD × (100 − Progress) / 100` rounded up to a whole day (`2 × max(1, ceil(PD × (100 − Progress) / 100))`) when PD is a whole number, to half a day (`max(1, ceil(2 × PD × (100 − Progress) / 100))`) when PD has a half; from a future Actual Start instead of R when there is one |
+| Not started | `max(snapHalf(PS), R, constraints)` | `PD > 0 ? addHalves(FS′, 2 × PD − 1) : FS′` (milestones as §5.4) |
 
 Constraints for not-started tasks, from each predecessor's forecast:
-- FS: `addWorkdays(pred.FF′, gap + lag)` (gap as in §5.4)
-- SS: `addWorkdays(pred.FS′, lag)`
+- FS: `addHalves(pred.FF′, gap + 2 × lag)` (gap as in §5.4)
+- SS: `addHalves(pred.FS′, 2 × lag)`
 
 In-progress tasks are not moved by predecessors (they already started).
 
 ### 5.7 Status & variance
 - `finishRef = AF ?? FF′`
-- `Variance (d) = workdayDiff(PF, finishRef)` → positive = late, negative = early.
+- `Variance (d) = halfDiff(PF, FF′) / 2` → positive = late, negative = early; it can be a half day (`+0.5d`).
+- A completed task compares days: `workdayDiff(PF, AF)`, since actual dates are whole days — a 0.5-day task finished on its planned day is on time, not `+0.5d`.
 - **Status:**
   1. `Completed` — AF set (or treated as completed)
   2. `Late` — not completed and Variance > 0
@@ -367,14 +387,14 @@ A task not started whose planned start has passed is pushed to R by the forecast
 
 ### 5.8 Progress metrics
 - **Every task has equal weight. Milestones are excluded** from all percentages.
-- `plannedPct(task, d)`: `d < PS` → 0; `d ≥ PF` → 100; else `countWorkdays(PS, d) / PD × 100`.
+- `plannedPct(task, d)`: `d < PS` → 0; `d ≥ PF` → 100; else `countHalves(PS, end of d) / (2 × PD) × 100` (a 0.5-day task reaches 100 at the end of its day).
 - `actualPct(task)` = Progress.
 - **Project actual %** = mean of Progress. **Project planned %** = mean of `plannedPct(task, SD)`.
 - **Variance (pts)** = actual % − planned %.
 - **SPI** = actual / planned (show `—` when planned = 0).
 - **Schedule state** (constants in `config.ts`): ≥ +2.0 pts `Ahead` (green) · > −2.0 `On track` (green) · > −5.0 `Slightly behind` (amber) · otherwise `Behind` (red).
-- **Planned Finish (project)** = max PF. **Forecast Finish (project)** = max finishRef. **Finish variance** = `workdayDiff` between them.
-- **Time elapsed** = `countWorkdays(project PS, min(SD, project PF)) / countWorkdays(project PS, project PF)`.
+- **Planned Finish (project)** = max PF. **Forecast Finish (project)** = max finishRef. **Finish variance** = `halfDiff` between them ÷ 2; once every task is completed, `workdayDiff` of their days (as a completed task's variance, §5.7).
+- **Time elapsed** = `countHalves(project PS, min(end of SD, project PF)) / countHalves(project PS, project PF)`; the project's duration in days is halves ÷ 2.
 - **This week** (the 7 days ending at SD): `actualPctAt(SD) − actualPctAt(SD − 7 days)` and the same for planned.
 - **Counts:** Completed, In Progress, Not Started, Late — over non-milestone tasks (like the percentages); milestones done / total separately.
 - **By assignee:** the same metrics over the tasks that list that assignee (a shared task counts fully for each assignee). Tasks without an assignee are grouped as `Unassigned`.
@@ -394,9 +414,9 @@ Project value = mean over non-milestone tasks. `forecast(SD) = actual(SD)` so th
 
 ### 5.10 Critical path (M5)
 On the forecast network of tasks that are not completed:
-- Backward pass from the project forecast finish: for tasks without successors `LF = project forecast finish`; `LS = addWorkdays(LF, −(PD − 1))` (milestones: `LS = LF`).
-- For each link: FS → `pred.LF ≤ addWorkdays(succ.LS, −(gap + lag))`; SS (only while the predecessor has not started) → `pred.LS ≤ addWorkdays(succ.LS, −lag)`, then `pred.LF = addWorkdays(pred.LS, PD − 1)`. Take the minimum. A started predecessor has met its SS links: its start is an actual, and §5.6 never moves an SS successor by the predecessor's finish.
-- `Total float = workdayDiff(FF′, LF)`. **Critical = not completed and float ≤ 0.**
+- In halves (§5.1), milestones placed as in §5.4. Backward pass from the project forecast finish: for tasks without successors `LF = project forecast finish`; `LS = addHalves(LF, −(2 × PD − 1))` (milestones: `LS = LF`, an end milestone's LS being that day's morning).
+- For each link: FS → `pred.LF ≤ addHalves(succ.LS, −(gap + 2 × lag))` (into a milestone: from its LF); SS (only while the predecessor has not started) → `pred.LS ≤ addHalves(succ.LS, −2 × lag)`, then `pred.LF = addHalves(pred.LS, 2 × PD − 1)`. Take the minimum. A started predecessor has met its SS links: its start is an actual, and §5.6 never moves an SS successor by the predecessor's finish.
+- `Total float = halfDiff(FF′, LF) / 2`. **Critical = not completed and float ≤ 0.**
 
 ### 5.11 Issue catalog
 | Code | Severity | Message | Quick fix |
@@ -451,7 +471,7 @@ On the forecast network of tasks that are not completed:
 ### 5.12 Major tasks (outline)
 - **Outline:** rows keep their order and each has a Level (§4.7). A row is a **major task** when the row below it has a deeper Level; its **tasks** are the rows below it up to the next row at its Level or shallower, and its **leaf tasks** are those of them that are not major tasks themselves. A row's parent is the nearest row above it with a smaller Level. A plan with every row at Level 1 has no major tasks and works as before.
 - **Calculation:** §5.3–§5.10 run on leaf tasks only. A major task has no links and no dates or progress of its own: its Planned Start, Planned Duration, Progress and actual dates in the file are not read. Each major task is then rolled up from its leaf tasks:
-  - Planned Start = earliest Planned Start; Planned Finish = latest Planned Finish; Planned Duration = working days from that start to that finish (0 when every leaf task is a milestone on one day).
+  - Planned Start = earliest Planned Start; Planned Finish = latest Planned Finish; Planned Duration = working days (halves ÷ 2) from that start to that finish (0 when every leaf task is a milestone on one day); the start may be an afternoon and the finish a midday, as its tasks'.
   - Forecast Start / Forecast Finish = earliest forecast start / latest forecast finish.
   - Actual Start = earliest actual start used for calculation (§5.5); Actual Finish = latest finish once every leaf task is completed, else blank; Actual Duration as §5.5.
   - Progress = the mean progress of its non-milestone leaf tasks (every task weighs the same, as the KPI, §5.8); a major task of milestones only is 100 when all are reached, else 0. Planned % at SD likewise.
@@ -674,7 +694,7 @@ Equal-width cards (5 in Track mode, 6 compact cards in Plan mode), separated by 
   - Plan mode Start on a task with predecessors: link icon + tooltip "Set by predecessors — add lag to delay".
 - **Editing**: click selects a cell; Enter / F2 / double-click / typing starts editing (`/` and `?` are shortcuts, not typing: press Enter or F2 first to type them); on the ID or a calculated cell, Enter / F2 / double-click opens the drawer instead; Enter commits and moves down; Tab commits and moves right; Esc cancels. Leaving a cell by clicking another control commits the edit and leaves the focus on that control.
   - Text: inline input. Remarks keep their line breaks: Alt+Enter (as in Excel) or Shift+Enter adds one, and a remark with several lines opens over the rows below.
-  - Numbers (Duration): inline input with validation — whole working days, 0–3650. A decimal is rounded (a note under the cell says so before it is saved); text, a negative number or more than 3650 shows a red message under the cell, and Enter/Tab keep the editor open. Leaving the cell with such a value keeps the old one (toast).
+  - Numbers (Duration): inline input with validation — working days in steps of 0.5, 0–3650. Another decimal is rounded to the nearest half day (a note under the cell says so before it is saved); text, a negative number or more than 3650 shows a red message under the cell, and Enter/Tab keep the editor open. Leaving the cell with such a value keeps the old one (toast).
   - Dates: native `<input type="date">` styled to match, as wide as the date needs (it may cover the cell to its left). Only 1950–2199; a date outside that range or half typed shows a red message under the cell and is not saved; clearing every part clears the date.
   - Assigned: chip editor with autocomplete from Resources; Enter on unknown text creates a new name. Text is split on `,` and `;` (a pasted "ACME, ThermCo" gives two names) and takes a matching resource's spelling. Picking a suggestion adds it at once; text left in the box is added when the editor is left (Tab, a click elsewhere, Ctrl+S). Enter on an empty box or Tab saves.
   - Predecessors: text input with live validation (red underline + message for invalid tokens).
@@ -691,6 +711,7 @@ Equal-width cards (5 in Track mode, 6 compact cards in Plan mode), separated by 
 - **Timeline header (2 tiers, `--head-bg` band — `--plan-wash` in Plan mode — with a `--border-strong` rule below; the Color by / Critical corner shares the band):** top = `Nov 2026` (12px semibold `--text`, one step stronger than the 11px `--text-2` day labels), the name staying at the left edge while any of its month is in view; bottom = day numbers (Day), `W46 · 10 Nov` (Week), week ticks (Month). When single days are shown (Day zoom, Fit at 20 px/day or more, the report's Gantt appendix), the header and the chart body draw a line at every day boundary, Monday lines in `--border-strong`.
 - **Non-working days (holidays and the weekdays the project doesn't work, §2):** `--nonwork` columns at every zoom whenever a day is at least 4 px wide (Day, Week, Month, Fit, and the report's Gantt appendix), with the holiday description as a tooltip in the timeline header ("Holiday" when it has none; "Non-working day" on a weekday off). In the header a holiday fills its day cell when the bottom tier shows day numbers; with week labels or Monday ticks it is a 4 px strip at the foot of the tier (the whole cell still shows the tooltip), so no week label runs across a grey box. The columns are drawn over the row bands with multiply blending, so a selected or hovered row stays one continuous band.
 - **Status date line** (Track): 2 px `--accent`, dashed, with a 4 px white outline in step with the dashes so it stays visible where it crosses a solid bar; label chip at the top "Status · 13 Nov". **Today line**: 1 px `--text-3` dashed, label "Today"; in Track mode shown only when today ≠ SD (Plan mode has no status-date line, so it always shows today). Both chips sit in the top tier of the timeline, kept inside the chart and clear of the Color by / Critical corner at its right end, with their line running down through the bottom tier; a Today chip that cannot sit on its line (beside the Status chip, or clear of the corner) names its date: "Today · 31 Oct". The today line is drawn only when it falls inside the chart. The lines cross the bars but pass under the bar labels and the timeline's day and week labels, whose halo (5 px on bar labels, 6 px in the timeline) stops a dashed line around the whole label.
+- **Half days:** a bar that starts in the afternoon starts in the middle of its day column, and one that finishes at midday ends in the middle of its last day column (Day zoom: 16 px a half day; Month: 2 px). Milestone diamonds stay centred on their day.
 - **Plan mode bars:** 16 px tall, radius 4, fill `--accent` (or the assignee color when Color by = Assignee); hovering a bar darkens it to `--accent-hover` (an assignee color stays as is). Label to the right of the bar = assignee names (12px `--text-2`), with a halo in its lane's colour (white, the hover grey or the selected blue).
 - **Track mode bars:**
   - Baseline: 4 px bar in `--baseline` at the bottom of the row lane (planned PS→PF).
@@ -701,8 +722,8 @@ Equal-width cards (5 in Track mode, 6 compact cards in Plan mode), separated by 
 - **Milestones:** 12 px diamond (`--text` in Plan, status color in Track; a Not started milestone is hollow: white with a 1.5 px `--idle` outline, also in the report's Gantt appendix) with the date as label.
 - **Dependency arrows:** 1.25 px `--arrow`, rounded elbows, 4 px arrowheads. FS: from bar end → right 8 px → vertical → into successor start. SS: from bar start → left 8 px → vertical → into successor start. Plan mode draws every arrow; on hover/select of a task, its arrows turn `--accent` and other arrows dim to 40%. Track mode draws only the hovered or selected task's arrows (to its predecessors and successors), in `--accent`, between the forecast/actual bars. Bar labels start past the 8 px run, so an arrow never crosses their first letter.
 - **Critical path** (M5, toggle): critical bars get a 2 px `--late` outline 2 px clear of the bar (a milestone's ring diamond is 4.5 px larger on each axis), and their arrows turn red.
-- **Interactions:** hover → tooltip card (name, assignees, planned dates, forecast/actual dates, progress, variance), hidden by Esc until the pointer leaves the bar; click → select row (synced with grid); double-click → open drawer. On load and on a mode switch, scroll horizontally to SD (Track) or project start (Plan). Changing zoom keeps the date at the centre of the chart in view; when the previous zoom had nothing to scroll (e.g. Fit), it scrolls to SD / project start. Jumping to a task (Issues panel, successor links) scrolls to its bar as the mode draws it: the planned bar in Plan mode, the forecast/actual bar in Track.
-- **Drag (M5, Plan mode only):** drag a root task's bar to move Planned Start; drag the right edge of any bar to change Planned Duration. Snap to working days. Show a ghost bar and date tooltip while dragging; near the left or right edge of the Gantt pane the chart scrolls by itself.
+- **Interactions:** hover → tooltip card (name, assignees, planned dates, forecast/actual dates, progress, variance; a start in the afternoon reads "3 Nov 2026 afternoon", a finish at midday "4 Nov 2026 midday"), hidden by Esc until the pointer leaves the bar; click → select row (synced with grid); double-click → open drawer. On load and on a mode switch, scroll horizontally to SD (Track) or project start (Plan). Changing zoom keeps the date at the centre of the chart in view; when the previous zoom had nothing to scroll (e.g. Fit), it scrolls to SD / project start. Jumping to a task (Issues panel, successor links) scrolls to its bar as the mode draws it: the planned bar in Plan mode, the forecast/actual bar in Track.
+- **Drag (M5, Plan mode only):** drag a root task's bar to move Planned Start; drag the right edge of any bar to change Planned Duration. Snap to half working days while the timeline shows single days (Day zoom, or Fit at 20 px a day or more), to whole working days otherwise (Week, Month): a move keeps the bar's length, a resize keeps at least half a day. Show a ghost bar and date tooltip while dragging; near the left or right edge of the Gantt pane the chart scrolls by itself.
 
 ### 7.9 Task drawer
 ```
@@ -736,10 +757,11 @@ Equal-width cards (5 in Track mode, 6 compact cards in Plan mode), separated by 
 - Width `--drawer-w`, `--shadow-3`, slides from the right over the Gantt area. The title reads as a heading (no box) until hovered or focused.
 - While open, the drawer follows a plain selection (grid click, ↑/↓ in the grid, Gantt click); Ctrl/Shift multi-select leaves it on its task. **↑ / ↓** in its header step to the previous / next shown row (in row order, so stepping still works when the task has just dropped out of a filter such as Status = Late).
 - Header chips: the work state (Not started / In progress / Completed); a Late task adds a red "Late +Nd" instead of a second "Late"; a finished task with a variance adds a neutral "Finished Nd late / early".
+- Half days: a Planned Start in the afternoon adds "· afternoon" to the field's label ("Start · afternoon"), a Planned Finish at midday "· midday"; the Forecast line adds "afternoon" / "midday" after its dates (the grid shows the date only). Duration takes steps of 0.5.
 - Forecast (read-only): Forecast Start → Forecast Finish, then ` · +Nd` (red, late) or ` · −Nd` (green, early) when the variance is not 0. On time, the line ends at the finish date (no "—").
 - Sections follow the mode: Plan mode shows Planned first and collapses Actual/Forecast; Track mode shows Progress/Actual first and shows Planned read-only (lock icon).
 - Values that can't be changed here (locked by the mode, or a Start set by predecessors) sit in a filled box the size of an input, with the reason as tooltip; a linked Start shows the link icon. An empty date input shows its placeholder dimmed.
-- **Add predecessor**: searchable task picker (ID + name; "12" and "#12" both find #12, an exact ID is listed first), then type (FS/SS) and lag (whole working days, at most ±3650). Tasks that would create a cycle are disabled in the picker. Nothing is highlighted until a query is typed (Enter right after opening links nothing); ↑/↓ move the highlight and Enter picks it (an exact ID that can't be linked picks nothing); Esc or a click outside closes the picker.
+- **Add predecessor**: searchable task picker (ID + name; "12" and "#12" both find #12, an exact ID is listed first), then type (FS/SS) and lag (working days in steps of 0.5, at most ±3650). Tasks that would create a cycle are disabled in the picker. Nothing is highlighted until a query is typed (Enter right after opening links nothing); ↑/↓ move the highlight and Enter picks it (an exact ID that can't be linked picks nothing); Esc or a click outside closes the picker.
 - The type select stays short (FS / SS); its tooltip names the predecessor ("FS: starts after #10 finishes · SS: can start once #10 starts"). Lag shows a `d` unit (read-only: `FS +2d`). Under an editable list with at least one link, one muted line reads "FS = start after it finishes · SS = start when it starts · lag in working days (− = overlap)".
 - Changes apply immediately (each change is one undo step): a field saves on Enter or when it is left, and Esc puts the value back. An entry the plan refuses (blank name, blank Duration or Planned Finish, Duration above 3650, a date outside 1950–2199, a half-typed date) is not saved: a toast says why and the field shows the plan's value again. The progress slider saves a mouse drag on release; keyboard steps (arrows, PageUp/PageDown, Home/End) save on Enter or when the slider is left ("Enter saves · Esc cancels" shows meanwhile), so one change is one edit. "Done" closes the drawer.
 
@@ -821,8 +843,8 @@ One dialog, "Settings", with three tabs — **General**, **Calendar**, **Resourc
 | Add task with major tasks | Below the selected row at its Level; on an expanded major task, as its first task; on a collapsed one, after its tasks at its Level |
 | Renumber IDs | Plan mode, More menu. Renumber 1..n in row order and rewrite all predecessor references, FF/SF ones included (their ID only; the rest stays as typed). Confirm first. Refused (toast "Fix the predecessors of tasks 30, 40 first — Renumber would change what they point to" · **Review**) while a predecessor names an ID no task has, or unreadable predecessor text holds a number. The drawer, selection, Changes and Problems rows follow their tasks, also through undo and redo |
 | Link / Unlink | See §7.6. Link rejects any link that would create a cycle (toast) |
-| Edit Planned Duration (Plan) | 0–3650 working days (`MAX_DAYS`); a larger value is refused with the toast "Duration must be 0–3650 days" |
-| Edit Planned Finish (Plan) | Sets Planned Duration = `countWorkdays(PS, new PF)` (at least 1; at most 3650, as above). A finish before Planned Start is refused (nothing changes) with the toast "Finish can't be before the start (2 Nov) — set Duration to 0 for a milestone" |
+| Edit Planned Duration (Plan) | 0–3650 working days (`MAX_DAYS`) in steps of 0.5 (another decimal is rounded to the nearest half day); a larger value is refused with the toast "Duration must be 0–3650 days" |
+| Edit Planned Finish (Plan) | Sets Planned Duration = `countHalves(PS, end of the new PF day) / 2` (at least 0.5, e.g. a task starting in the afternoon and finishing that day; at most 3650, as above). A finish before Planned Start is refused (nothing changes) with the toast "Finish can't be before the start (2 Nov) — set Duration to 0 for a milestone" |
 | Edit Planned Start on linked task | Disabled (hint: add lag) |
 | Change Project Start (Plan) | In Settings › General, when the new date differs and root tasks (no links) start on the old project start, a checked option "Also move N tasks that start on 28 Sep 26 to 5 Oct 26 (linked tasks follow)" ("the task that starts" when there is one) appears under the date. Apply does both as one undo step; Cancel and Esc drop every edit |
 | Change working days or holidays | Settings › Calendar (§7.14), with the other tabs as one undo step. The plan is recomputed with the new calendar: in Plan mode a root task whose Planned Start is now a non-working day moves to the next working day and every planned date follows (toast "Plan recalculated — N tasks moved" · **Review**); in Track mode the baseline stays (§5.4) and forecasts, variance, status and the S-curve change |
@@ -955,8 +977,10 @@ export interface Task {
   assigned: string[];
   predecessorsText: string;                    // as typed; single source of truth, parsed by compute() every time
   plannedStart?: ISODate;
-  plannedDuration?: number;
+  plannedStartPM?: boolean;                    // starts in the afternoon (Planned Start 12:00, a drag at Day zoom)
+  plannedDuration?: number;                    // working days, steps of 0.5
   plannedFinish?: ISODate;
+  plannedFinishMidday?: boolean;               // the stored Planned Finish is at midday (12:00)
   progress: number;                            // 0–100
   actualStart?: ISODate;
   actualFinish?: ISODate;
@@ -985,12 +1009,14 @@ export type Status = 'Not Started' | 'In Progress' | 'Late' | 'Completed';
 export interface TaskResult {
   id: number;
   plannedStart: ISODate; plannedDuration: number; plannedFinish: ISODate;
+  plannedStartPM?: boolean; plannedFinishMidday?: boolean;     // half days (§5.1): written as 12:00
   progress: number;                            // value to write back (rounded, clamped, 100 when AF is set)
   level: number;                               // normalized outline depth (§4.7, §5.12)
   summary?: { tasks: number; actualFinish?: ISODate };  // set on a major task: its leaf-task count and rolled-up Actual Finish
   actualStart?: ISODate;                       // value to write back (milestone fill); never a "for calculation" substitute
   actualDuration?: number;
   forecastStart: ISODate; forecastFinish: ISODate;
+  forecastStartPM?: boolean; forecastFinishMidday?: boolean;
   variance: number; status: Status;
   predecessorsText: string;                    // canonical, or the original text if any token has an issue
   links: Link[];                               // links used for calculation (valid, not in a cycle)
@@ -1054,7 +1080,8 @@ export interface ComputeResult {
   - Progress: milestones excluded, all-milestones project, by-assignee with shared tasks, Unassigned group, this-week deltas.
   - S-curve: planned reaches 100 at project PF; actual(SD) = mean progress; forecast joins actual at SD and reaches 100 at forecast finish.
   - Critical path (M5): simple chain, parallel branches with float.
-- **Excel round-trip (Node, exceljs):** read sample → write → read: data equal; header fills, column widths, freeze panes, data validation and an extra user column/sheet unchanged. Messy fixture: all issues reported, unparseable text preserved. Working Days: every accepted form, unreadable text kept, the field appended to an older file. Holidays and Resources edited in the app: only changed cells written, rows never moved, unreadable rows and sheets without their header left alone, a second save writes nothing new.
+  - Half days: the half-day calendar functions; 0.5-day tasks sharing a day, FS/SS with half-day lags, milestones after a midday finish, an afternoon root start, blank duration from a midday finish, Track-mode frozen halves, remaining work rounding (whole vs half), completed variance in days, critical path and S-curve in halves; and a whole-day plan calculating exactly as before.
+- **Excel round-trip (Node, exceljs):** read sample → write → read: data equal; header fills, column widths, freeze panes, data validation and an extra user column/sheet unchanged. Messy fixture: all issues reported, unparseable text preserved. Working Days: every accepted form, unreadable text kept, the field appended to an older file. Holidays and Resources edited in the app: only changed cells written, rows never moved, unreadable rows and sheets without their header left alone, a second save writes nothing new. Half days: 0.5 durations and 12:00 dates read and written back; other times kept; the template's whole-number rule replaced, a user's rule kept.
 - **Manual QA:** §15 before closing each milestone that touches UI.
 
 ---
@@ -1117,6 +1144,7 @@ export interface ComputeResult {
 - [ ] Day zoom: Saturdays and Sundays marked in the timeline and the chart.
 - [ ] Settings › Calendar: untick Sunday, add a holiday range, Apply → Sundays and the holidays grey, durations skip them, "Plan recalculated" toast; Undo restores; Save and open in Excel: Project › Working Days, new Holidays rows, other rows untouched.
 - [ ] Settings › Resources: rename a contractor (tasks follow), change its color (Gantt by assignee follows), add one, remove an unused one; Save and open in Excel: the rows changed in place.
+- [ ] Half days: set a duration to 0.5 and link a second 0.5-day task → both on one day, bars half a column wide at Day zoom; drag a bar by half a day; Save and open in Excel: 0.5 in Planned Duration, the afternoon start's cell holds 12:00 (shown as the date only), Excel accepts typing 1.5 in Planned Duration.
 - [ ] Report prints to PDF cleanly.
 - [ ] Print Gantt: in Plan mode with Color by assignee and the critical path on, a collapsed group and a hidden column, the PDF shows the same colours, rings, red arrows, rows and columns; A3 fits more rows; Track mode prints its bars and status date.
 - [ ] DevTools Network shows zero requests.
@@ -1366,3 +1394,12 @@ Claude Code appends decisions made during the build (date · decision · reason)
 - 2026-11-20 · Renaming a resource renames it on every task; only a resource no task uses can be removed · A name kept on tasks would come back as a new resource on the next save; removing a used name would leave assignees without a resource.
 - 2026-11-20 · A resource without its own color keeps the color it shows when a resource above it is removed (the color is written to its Color cell) · The palette goes by position, so removing one resource would recolor every one below it in the Gantt and the report.
 - 2026-11-20 · Holidays and resources are read-only in Settings when their sheet has content but no Date / Name header · Save leaves such a sheet alone (§4.4, §4.5), so edits there would vanish at the next open.
+- 2026-11-20 · Half-day durations (owner request, docs/proposal-half-day.md): Planned Duration and lags in steps of 0.5; the engine counts in halves (morning, afternoon); a task can start in the afternoon and finish at midday · Two short jobs can share a day. Every rule of §5 is the whole-day rule counted in halves, so a plan of whole days calculates exactly as before (checked against the previous engine on thousands of random plans).
+- 2026-11-20 · An afternoon start or a midday finish is stored as the time 12:00 in the date cell (Planned Start/Finish, Forecast Start/Finish); only exactly 12:00 counts · Owner approved. No new column: Excel shows only the date, a Track-mode baseline reopens exactly, and other times (a 19:00 night shift, MS Project's 08:00) keep their whole-day meaning.
+- 2026-11-20 · Save replaces the template's own whole-number validation on Planned Duration with a decimal rule; a rule the user made is never changed · Owner approved. Excel would refuse 0.5 in files made before half days.
+- 2026-11-20 · Actual dates stay whole days; a completed task's variance (and the project's once every task is done) counts days · Owner approved. Progress is reported per day, so a 0.5-day job finished on its planned day is on time.
+- 2026-11-20 · Dragging snaps to half days only while the timeline shows single days (Day zoom, or Fit at 20 px a day or more) · Owner approved. A half day is 16 px at Day zoom but 2–6 px at Week and Month, too small to aim at.
+- 2026-11-20 · Remaining work of a task in progress rounds up to a whole day when its duration is whole days, to half a day when it has a half · The proposal said half days for every task, but that moves the forecasts and variances of existing whole-day plans by half a day; the owner's plans must calculate exactly as before.
+- 2026-11-20 · Milestones keep the whole-day rules in halves: a start milestone sits at the start of its half, any other at the end of its finish half; an SS link (or an FS link from a start milestone) into a milestone still puts it at the end of that day, and its SS successors count from that day's morning · Reproduces today's numbers exactly, while a milestone after a task that finishes at midday sits at midday, so A → milestone → B starts B when A → B would.
+- 2026-11-20 · A lag that isn't a whole number of half days (`3+0.3`) is invalid notation (`E_BAD_LINK`, text kept), while Planned Duration is rounded to the nearest half day · A rounded lag would move a successor without a word; a duration cell can hold any number Excel computes, and its rounding is listed in Changes.
+- 2026-11-20 · Typing a Planned Start in the app starts the task in the morning; the afternoon comes from a drag at Day zoom, a half-day lag, or 12:00 in Excel · No extra control in the grid or drawer for a rare case; the proposal's way to set it.

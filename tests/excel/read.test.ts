@@ -97,10 +97,22 @@ describe('values — SPEC §4.7', () => {
     expect(task(r, 1)).toMatchObject({ plannedStart: undefined, plannedDuration: undefined, progress: 0, actualFinish: undefined });
   });
 
-  it('Planned Duration: rounded (corrected), negative is bad', () => {
-    const r = read(templateWith([{ ID: 1, Task: 'A', 'Planned Duration': 2.5 }, { ID: 2, Task: 'B', 'Planned Duration': -1 }]));
-    expect(task(r, 1).plannedDuration).toBe(3);
-    expect(r.changes).toContainEqual(expect.objectContaining({ taskId: 1, field: 'Planned Duration', from: 2.5, to: 3, kind: 'corrected' }));
+  it('Planned Duration: rounded to half a day (corrected), negative is bad', () => {
+    const r = read(
+      templateWith([
+        { ID: 1, Task: 'A', 'Planned Duration': 2.3 },
+        { ID: 2, Task: 'B', 'Planned Duration': -1 },
+        { ID: 3, Task: 'C', 'Planned Duration': 2.5 },
+        { ID: 4, Task: 'D', 'Planned Duration': 2.2 },
+      ]),
+    );
+    expect(task(r, 1).plannedDuration).toBe(2.5);
+    expect(r.changes).toContainEqual(
+      expect.objectContaining({ taskId: 1, field: 'Planned Duration', from: 2.3, to: 2.5, kind: 'corrected', reason: 'Rounded to half a day' }),
+    );
+    expect(task(r, 3).plannedDuration).toBe(2.5);
+    expect(r.changes.some((c) => c.taskId === 3 && c.field === 'Planned Duration')).toBe(false);
+    expect(task(r, 4).plannedDuration).toBe(2);
     expect(codes(r)).toEqual(['W_BAD_NUMBER']);
   });
 

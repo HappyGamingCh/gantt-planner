@@ -35,7 +35,7 @@ describe('template workbook — SPEC §4', () => {
     const rules = validationsOf(tasks).model;
     expect(rules.B2).toMatchObject({ type: 'whole', operator: 'between', formulae: [1, 8] }); // Level
     expect(rules.I2).toMatchObject({ type: 'decimal', operator: 'between', formulae: [0, 100] }); // 50% is 0.5
-    expect(rules.G1000).toMatchObject({ type: 'whole', operator: 'greaterThanOrEqual', formulae: [0] });
+    expect(rules.G1000).toMatchObject({ type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0] }); // half days, 0.5
     for (const col of ['F', 'H', 'J', 'K']) expect(rules[`${col}2`]?.type).toBe('date');
     expect(rules.C2).toBeUndefined();
   });

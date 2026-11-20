@@ -1,6 +1,7 @@
 // Field rules of a task edit (SPEC §6, §8): what a typed value becomes, what it fills in, and why it is refused.
 // Pure (no store), so the grid, the drawer and the store say the same words.
 import { MAX_DAYS } from '../config';
+import { halfOf } from '../engine/calendar';
 import { planCalendar } from '../engine/compute';
 import { isPlanDate } from '../engine/dates';
 import type { ISODate, Plan, Project, Task, TaskResult } from '../engine/types';
@@ -24,7 +25,15 @@ export type EditField =
   | 'actualFinish'
   | 'remarks';
 
-export type EditValue = string | number | string[] | undefined;
+/** A Planned Start with its half (§5.1): a bar dragged at Day zoom can start a task in the afternoon. */
+export interface HalfDay {
+  date: ISODate;
+  afternoon: boolean;
+}
+
+export type EditValue = string | number | string[] | HalfDay | undefined;
+
+const isHalfDay = (v: EditValue): v is HalfDay => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 const BASELINE: readonly EditField[] = ['predecessorsText', 'plannedStart', 'plannedDuration', 'plannedFinish'];
 const ACTUALS: readonly EditField[] = ['progress', 'actualStart', 'actualFinish'];
@@ -45,7 +54,7 @@ export function readOnlyReason(field: EditField, task: Task, r: TaskResult | und
 /** The patch one edit makes (§8), with the toast that explains it; no patch with a message = refused. */
 export function editRules(task: Task, r: TaskResult | undefined, field: EditField, value: EditValue, plan: Plan): { patch?: Partial<Task>; message?: string } {
   const sd = plan.project.statusDate;
-  const date = typeof value === 'string' && value !== '' ? value : undefined;
+  const date = typeof value === 'string' && value !== '' ? value : isHalfDay(value) ? value.date : undefined;
   if (date !== undefined && DATE_FIELDS.includes(field) && !isPlanDate(date)) return { message: DATE_RANGE_MESSAGE };
   switch (field) {
     case 'name': {
@@ -66,9 +75,10 @@ export function editRules(task: Task, r: TaskResult | undefined, field: EditFiel
       return text !== task.predecessorsText ? { patch: { predecessorsText: text } } : {};
     }
     case 'plannedStart':
-      return { patch: { plannedStart: date } }; // blank: the task follows Project Start
+      // Blank: the task follows Project Start. A typed date starts in the morning; a drag may say the afternoon (§5.4).
+      return { patch: { plannedStart: date, plannedStartPM: isHalfDay(value) && value.afternoon ? true : undefined } };
     case 'plannedDuration': {
-      const days = Math.round(Number(value));
+      const days = Math.round(Number(value) * 2) / 2; // working days in steps of half a day
       if (!Number.isFinite(days) || days < 0) return {};
       return days <= MAX_DAYS ? { patch: { plannedDuration: days } } : { message: DURATION_MESSAGE };
     }
@@ -76,7 +86,8 @@ export function editRules(task: Task, r: TaskResult | undefined, field: EditFiel
       if (!date || !r) return {};
       // §8: a finish before the start is refused (only Duration 0 makes a milestone); otherwise it sets the duration.
       if (date < r.plannedStart) return { message: `Finish can't be before the start (${formatDayMonth(r.plannedStart)}) — set Duration to 0 for a milestone` };
-      const days = planCalendar(plan).countWorkdays(r.plannedStart, date);
+      // To the end of that day, in halves: a task that starts in the afternoon and finishes that day takes 0.5 (§8).
+      const days = planCalendar(plan).countHalves(halfOf(r.plannedStart, r.plannedStartPM), halfOf(date, true)) / 2;
       return days <= MAX_DAYS ? { patch: { plannedDuration: days } } : { message: DURATION_MESSAGE };
     }
     case 'progress':

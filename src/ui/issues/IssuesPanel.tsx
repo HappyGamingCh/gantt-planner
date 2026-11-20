@@ -54,10 +54,12 @@ export function IssuesSheet({ tab, found, changes, tasks }: { tab: State['issues
   );
 }
 
-/** A value in a change row: dates as "3 Nov", blanks as "blank". */
+/** A value in a change row: dates as "3 Nov" ("3 Nov afternoon", "3 Nov midday" for a half day), blanks as "blank". */
 function shown(value: unknown): string {
   if (value === undefined || value === null || value === '') return 'blank';
-  if (typeof value === 'string' && isISODate(value)) return formatDayMonth(value);
+  if (typeof value === 'string' && isISODate(value.slice(0, 10)) && /^.{10}( afternoon| midday)?$/.test(value)) {
+    return formatDayMonth(value.slice(0, 10)) + value.slice(10);
+  }
   return String(value);
 }
 

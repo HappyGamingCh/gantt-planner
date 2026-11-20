@@ -9,11 +9,12 @@ export interface ParsedToken {
   error?: 'bad' | 'unsupported';
 }
 
-const TOKEN_RE = /^(\d+)(FS|SS|FF|SF)?(?:([+-])(\d+)D?)?$/;
+const TOKEN_RE = /^(\d+)(FS|SS|FF|SF)?(?:([+-])(\d+(?:\.\d*)?|\.\d+)D?)?$/;
 
 /**
  * Splits on `,`, `;` and line breaks, ignores whitespace inside an item and empty items, and parses each token.
- * Whitespace between two numbers (`3 4`) is invalid rather than read as `34`, and so is a lag beyond MAX_DAYS.
+ * Whitespace between two numbers (`3 4`) is invalid rather than read as `34`, and so is a lag beyond MAX_DAYS or one
+ * that isn't a whole number of half days (`3+0.3`, §5.2).
  */
 export function parsePredecessors(text: string): ParsedToken[] {
   const tokens: ParsedToken[] = [];
@@ -22,7 +23,7 @@ export function parsePredecessors(text: string): ParsedToken[] {
     if (raw === '') continue;
     const m = /\d\s+\d/.test(raw) ? null : TOKEN_RE.exec(raw.replace(/\s+/g, '').toUpperCase());
     const lag = m?.[4] === undefined ? 0 : Number(m[4]) * (m[3] === '-' ? -1 : 1);
-    if (!m || Math.abs(lag) > MAX_DAYS) {
+    if (!m || Math.abs(lag) > MAX_DAYS || !Number.isInteger(lag * 2)) {
       tokens.push({ raw, error: 'bad' });
     } else if (m[2] === 'FF' || m[2] === 'SF') {
       tokens.push({ raw, error: 'unsupported' });
@@ -33,7 +34,7 @@ export function parsePredecessors(text: string): ParsedToken[] {
   return tokens;
 }
 
-/** Canonical form: `3` · `3FS+2` · `5SS` · `5SS-1`. */
+/** Canonical form: `3` · `3FS+2` · `3FS+0.5` · `5SS` · `5SS-1`. */
 export function formatLink(link: Link): string {
   const lag = link.lag === 0 ? '' : `${link.lag > 0 ? '+' : '-'}${Math.abs(link.lag)}`;
   if (link.type === 'FS') return lag === '' ? String(link.predId) : `${link.predId}FS${lag}`;

@@ -60,7 +60,8 @@ export function TextField({ label, value, onSave, multiline, autoFocus, required
 /**
  * A date input (1950–2199; a half-typed date is never saved), or the date in a static box when it can't be changed
  * here — `hint` says why, `linked` adds the link icon of a start set by predecessors. `required` is the message shown
- * when the date is cleared, for a date that can't be blank.
+ * when the date is cleared, for a date that can't be blank. `half` marks a start in the afternoon or a finish at midday
+ * after the label (§7.9); a typed date starts in the morning.
  */
 export function DateField({
   label,
@@ -70,6 +71,7 @@ export function DateField({
   hint,
   linked,
   required,
+  half,
 }: {
   label: string;
   value?: ISODate;
@@ -78,11 +80,15 @@ export function DateField({
   hint?: string;
   linked?: boolean;
   required?: string;
+  half?: 'afternoon' | 'midday';
 }) {
   const draft = useDraft(value ?? '', onSave, { check: (text, el) => dateProblem(text, el instanceof HTMLInputElement && el.validity.badInput, required) });
   return (
     <label className="drawer-field" title={hint}>
-      <span>{label}</span>
+      <span>
+        {label}
+        {half && <span className="drawer-half"> · {half}</span>}
+      </span>
       {readOnly ? (
         <span className="drawer-static">
           {linked && <Link2 size={12} aria-hidden="true" />}
@@ -95,7 +101,7 @@ export function DateField({
   );
 }
 
-/** Planned Duration: whole days, 0–MAX_DAYS (0 = milestone); a decimal is rounded and a toast says so; a blank isn't saved. */
+/** Planned Duration: days in steps of 0.5, 0–MAX_DAYS (0 = milestone); another decimal is rounded and a toast says so; a blank isn't saved. */
 export function DaysField({ label, value, onSave, readOnly, hint }: { label: string; value: number; onSave: (v: number) => void; readOnly?: boolean; hint?: string }) {
   const save = (text: string) => {
     const { value: days, note } = parseDuration(text); // the check already refused text, negatives and blanks

@@ -4,7 +4,7 @@ import { MAX_ID } from '../config';
 import { makeIssue } from '../engine/issues';
 import { normalizeLevels, outlineOf } from '../engine/outline';
 import type { Change, Issue, Task } from '../engine/types';
-import { cellText, cleanName, isBlank, isFormula, isPercentFormat, parseDate, parseDuration, parseNumber, plainValue, tidyLines } from './cells';
+import { cellText, cleanName, isBlank, isFormula, isNoon, isPercentFormat, parseDate, parseDuration, parseNumber, plainValue, tidyLines } from './cells';
 import type { CellNote, CellValue, Row, Style, Worksheet } from './exceljs';
 import { BUDDHIST_ERA, formulaIssue, predecessorsNotText, quotedList, taskHeaderHint } from './readMessages';
 import { COLUMN_OF, TASK_COLUMNS, readTasksHeader, type TaskField, type TasksHeader } from './schema';
@@ -219,21 +219,24 @@ function readTask(
 
   predecessorsNotText(id, valueOf('predecessors'), source.styles[header.known.get('predecessors') ?? 0]?.numFmt, issues);
 
-  // Dates and numbers in column order, so issues read left to right.
+  // Dates and numbers in column order, so issues read left to right. The time 12:00 in a planned date is a half day
+  // (§4.7): a start in the afternoon, a finish at midday; any other time keeps the date's meaning.
   const plannedStart = date('plannedStart');
+  const plannedStartPM = plannedStart !== undefined && isNoon(valueOf('plannedStart'));
   const duration = parseDuration(valueOf('plannedDuration'), date1904);
   let plannedDuration: number | undefined;
   if (duration.bad) bad('W_BAD_NUMBER', 'plannedDuration');
   else if (duration.value !== undefined) {
-    plannedDuration = Math.round(duration.value);
+    plannedDuration = Math.round(duration.value * 2) / 2; // working days in steps of half a day
     const rounded = plannedDuration !== duration.value;
     if (duration.unitRemoved) {
-      const reason = rounded ? 'Unit removed, rounded to a whole number' : 'Unit removed';
+      const reason = rounded ? 'Unit removed, rounded to half a day' : 'Unit removed';
       change('plannedDuration', text('plannedDuration').trim(), plannedDuration, 'corrected', reason);
-    } else if (rounded) change('plannedDuration', duration.value, plannedDuration, 'corrected', 'Rounded to a whole number');
+    } else if (rounded) change('plannedDuration', duration.value, plannedDuration, 'corrected', 'Rounded to half a day');
   }
 
   const plannedFinish = date('plannedFinish');
+  const plannedFinishMidday = plannedFinish !== undefined && isNoon(valueOf('plannedFinish'));
 
   // Progress: a %-formatted fraction means percent (0.5 → 50); blank → 0. Rounding and clamping are the engine's (§5.5).
   const progressValue = valueOf('progress');
@@ -267,8 +270,10 @@ function readTask(
     assigned,
     predecessorsText: text('predecessors').trim(),
     plannedStart,
+    ...(plannedStartPM ? { plannedStartPM } : {}),
     plannedDuration,
     plannedFinish,
+    ...(plannedFinishMidday ? { plannedFinishMidday } : {}),
     progress,
     actualStart,
     actualFinish,

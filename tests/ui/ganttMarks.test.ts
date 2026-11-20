@@ -77,6 +77,19 @@ describe('bar labels clear of the arrows — SPEC §7.8', () => {
   });
 });
 
+describe('half days on the chart — SPEC §7.8', () => {
+  it('an afternoon start begins mid-column and a midday finish ends mid-column', () => {
+    const r = { ...row(7).r, plannedStartPM: true, plannedFinishMidday: true, forecastStartPM: true };
+    const whole = span(row(7).r, 'Plan', scale);
+    const half = span(r, 'Plan', scale);
+    expect(half.x0).toBe(whole.x0 + scale.px / 2);
+    expect(half.x1).toBe(whole.x1 - scale.px / 2);
+    const track = span(r, 'Track', scale);
+    expect(track.x0).toBe(span(row(7).r, 'Track', scale).x0 + scale.px / 2);
+    expect(track.x1).toBe(span(row(7).r, 'Track', scale).x1);
+  });
+});
+
 describe('resize handle on short bars — SPEC §7.8 drag', () => {
   const inside = (x: number, h: { x: number; width: number }) => x >= h.x && x <= h.x + h.width;
 

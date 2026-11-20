@@ -1,7 +1,8 @@
 // S-curve data (SPEC §5.9) and the per-task curve values shared with progress metrics (§5.8).
-// Linear segments are measured in working days with end-of-day values: day d includes the work of day d.
-import type { Calendar } from './calendar';
+// Linear segments are measured in working halves (§5.1) with end-of-day values: day d includes the work of day d.
+import { halfOf, type Calendar } from './calendar';
 import { fromDayNumber, toDayNumber } from './dates';
+import { halvesOf } from './schedule';
 import type { ISODate, SCurvePoint, TaskCalc } from './types';
 
 /** At most about this many points: a longer span (only absurd durations or lags make one) is sampled every few days. */
@@ -11,11 +12,18 @@ export function mean(values: readonly number[]): number {
   return values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length;
 }
 
-/** Share of the task's planned work done by the end of day d. */
-export function plannedPct(t: Pick<TaskCalc, 'plannedStart' | 'plannedDuration' | 'plannedFinish'>, d: ISODate, cal: Calendar): number {
+/**
+ * Share of the task's planned work done by the end of day d (a 0.5-day task: 100 at the end of its day). `ps`: the half
+ * it starts in; without it, the morning of Planned Start.
+ */
+export function plannedPct(
+  t: Pick<TaskCalc, 'plannedStart' | 'plannedDuration' | 'plannedFinish'> & Partial<Pick<TaskCalc, 'ps'>>,
+  d: ISODate,
+  cal: Calendar,
+): number {
   if (d < t.plannedStart) return 0;
   if (d >= t.plannedFinish) return 100;
-  return Math.min(100, (cal.countWorkdays(t.plannedStart, d) / Math.max(1, t.plannedDuration)) * 100);
+  return Math.min(100, (cal.countHalves(t.ps ?? halfOf(t.plannedStart), halfOf(d, true)) / Math.max(1, halvesOf(t.plannedDuration))) * 100);
 }
 
 /** Actual series value at d (d ≤ status date). */
@@ -30,13 +38,14 @@ export function actualPctAt(t: TaskCalc, d: ISODate, statusDate: ISODate, cal: C
 /** Forecast series value at d (d > status date). */
 export function forecastPctAt(t: TaskCalc, d: ISODate, statusDate: ISODate, cal: Calendar): number {
   if (t.calcFinish !== undefined || d >= t.forecastFinish) return 100;
+  const end = halfOf(d, true);
   if (t.calcStart !== undefined) {
     // In progress: from Progress at the status date to 100 at Forecast Finish, measured from R.
-    const r = cal.nextWorkday(statusDate);
-    return t.progress + ((100 - t.progress) * cal.countWorkdays(r, d)) / Math.max(1, cal.countWorkdays(r, t.forecastFinish));
+    const r = halfOf(cal.nextWorkday(statusDate));
+    return t.progress + ((100 - t.progress) * cal.countHalves(r, end)) / Math.max(1, cal.countHalves(r, t.ff));
   }
   if (d < t.forecastStart) return 0;
-  return (100 * cal.countWorkdays(t.forecastStart, d)) / Math.max(1, cal.countWorkdays(t.forecastStart, t.forecastFinish));
+  return (100 * cal.countHalves(t.fs, end)) / Math.max(1, cal.countHalves(t.fs, t.ff));
 }
 
 /**

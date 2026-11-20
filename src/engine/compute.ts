@@ -1,13 +1,13 @@
 // Engine entry point: full recompute from inputs (SPEC §3.3, §5.3).
 import { applyActualRules } from './actuals';
-import { createCalendar, type Calendar } from './calendar';
+import { createCalendar, endOfDayOf, isAfternoon, type Calendar } from './calendar';
 import { computeTotalFloat } from './critical';
 import { computeForecast } from './forecast';
 import { makeIssue } from './issues';
 import { buildGraph } from './links';
 import { normalizeLevels, outlineOf, rollUp } from './outline';
 import { summarizeByAssignee, summarizeProject } from './progress';
-import { schedulePlanned, startMilestones } from './schedule';
+import { finishesMidday, schedulePlanned, startMilestones } from './schedule';
 import { buildSCurve, plannedPct } from './scurve';
 import { taskStatus, taskVariance } from './status';
 import type { Change, ComputeResult, Issue, Plan, Project, Resource, Task, TaskCalc, TaskResult } from './types';
@@ -44,8 +44,8 @@ export function compute(
   const startMs = startMilestones(graph.order, graph.calcLinks);
   const planned = schedulePlanned(graph.order, graph.calcLinks, startMs, project, calendar, issues, changes);
   const actuals = applyActualRules(leaves, planned, sd, calendar, issues, changes);
-  const forecast = computeForecast(graph.order, graph.calcLinks, startMs, planned, actuals, sd, calendar);
-  const floats = computeTotalFloat(graph.order, graph.calcLinks, startMs, planned, actuals, forecast, calendar);
+  const forecast = computeForecast(graph.order, graph.calcLinks, planned, actuals, sd, calendar);
+  const floats = computeTotalFloat(graph.order, graph.calcLinks, planned, actuals, forecast, calendar);
 
   const rows: TaskCalc[] = [];
   const levelOf = new Map(tasks.map((t, i) => [t.id, levels[i]!]));
@@ -54,7 +54,7 @@ export function compute(
     const act = actuals.get(task.id)!;
     const fc = forecast.get(task.id)!;
     const totalFloat = floats.get(task.id);
-    const variance = taskVariance(plan.finish, fc.finish, calendar);
+    const variance = taskVariance(plan.f, fc.f, act.calcFinish !== undefined, calendar);
     const status = taskStatus(act.calcFinish !== undefined, variance, act.calcStart !== undefined || act.progress > 0);
     const row: TaskCalc = {
       id: task.id,
@@ -69,6 +69,11 @@ export function compute(
       forecastStart: fc.start,
       forecastFinish: fc.finish,
       status,
+      // A start milestone's finish is the start of its half: as an end, its day's (§5.4).
+      ps: plan.s,
+      pf: plan.startMs ? endOfDayOf(plan.f) : plan.f,
+      fs: fc.s,
+      ff: plan.startMs ? endOfDayOf(fc.f) : fc.f,
     };
     rows.push(row);
     return {
@@ -77,11 +82,15 @@ export function compute(
       plannedStart: plan.start,
       plannedDuration: plan.duration,
       plannedFinish: plan.finish,
+      ...(isAfternoon(plan.s) ? { plannedStartPM: true } : {}),
+      ...(finishesMidday(plan.f, plan.startMs) ? { plannedFinishMidday: true } : {}),
       progress: act.progress,
       actualStart: act.actualStart,
       actualDuration: act.actualDuration,
       forecastStart: fc.start,
       forecastFinish: fc.finish,
+      ...(isAfternoon(fc.s) ? { forecastStartPM: true } : {}),
+      ...(finishesMidday(fc.f, plan.startMs) ? { forecastFinishMidday: true } : {}),
       variance,
       status,
       predecessorsText: graph.predecessorsText.get(task.id)!,

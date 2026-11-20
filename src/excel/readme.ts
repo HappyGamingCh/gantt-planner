@@ -4,9 +4,9 @@ export const README_TITLE = 'Gantt Planner — read me';
 export const README_LINES = [
   '1. This file is the data for Gantt Planner. Open gantt-planner.html and click Open to use it.',
   '2. You may edit dark-header columns in Excel. Grey-header columns are calculated and will be overwritten.',
-  '3. Predecessors notation: 3 (finish-to-start), 3SS (start-to-start), 3+2 or 3FS+2 (2-day lag), 3SS-1 (1-day lead). Separate with a comma and a space (3, 120).',
+  '3. Predecessors notation: 3 (finish-to-start), 3SS (start-to-start), 3+2 or 3FS+2 (2-day lag), 3SS-1 (1-day lead), 3+0.5 (half a day). Separate with a comma and a space (3, 120).',
   '4. Tasks with predecessors get their Planned Start calculated. To delay a task, add lag (e.g. 3+5).',
-  '5. Planned Duration wins over Planned Finish when they disagree.',
+  '5. Planned Duration wins over Planned Finish when they disagree. Durations and lags may be half days (0.5, 1.5). A start in the afternoon or a finish at midday is stored as the time 12:00 in the date (Excel shows only the date).',
   "6. Gantt Planner can't keep charts, pivot tables, text boxes, shapes, sparklines or Excel tables anywhere in this file: saving removes them (a table's cells stay, as a normal range). Please don't add images, formulas or merged cells to the Tasks sheet.",
   '7. Close this file in Excel before saving from Gantt Planner. Use OneDrive version history to restore older versions.',
   '8. Assigned: separate several names with commas. Working days: the days in Working Days in the Project sheet (e.g. Mon-Sat; blank = every day), except the dates in the Holidays sheet.',
