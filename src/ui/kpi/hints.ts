@@ -34,8 +34,8 @@ export function trackHints(s: ProjectSummary): TrackHints {
     ].join('\n'),
     finish: `Forecast finish ${formatDateLong(s.forecastFinish)} vs planned finish ${formatDateLong(s.plannedFinish)}: ${finish}.`,
     tasks: `${completed} completed · ${inProgress} in progress · ${late} late · ${notStarted} not started (milestones are not counted).`,
-    time: `Working days from the planned start (${formatDateLong(s.plannedStart)}) to the status date, out of ${days(s.durationDays)} planned. Days in the Holidays sheet are skipped.`,
+    time: `Working days from the planned start (${formatDateLong(s.plannedStart)}) to the status date, out of ${days(s.durationDays)} planned. Non-working days are skipped.`,
   };
 }
 
-export const PLAN_DURATION_HINT = 'Working days from the planned start to the planned finish. Days in the Holidays sheet are skipped.';
+export const PLAN_DURATION_HINT = 'Working days from the planned start to the planned finish. Non-working days are skipped.';

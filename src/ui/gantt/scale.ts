@@ -1,8 +1,8 @@
 // Time scale of the Gantt (SPEC §7.8): visible range, pixels per day, timeline header labels. Pure functions.
 import { PX_PER_DAY, type Zoom } from '../../config';
 import type { Calendar } from '../../engine/calendar';
-import { dayOfWeek, fromDayNumber, toDayNumber } from '../../engine/dates';
-import type { ISODate } from '../../engine/types';
+import { dayOfWeek, fromDayNumber, toDayNumber, weekdayOf } from '../../engine/dates';
+import type { Holiday, ISODate } from '../../engine/types';
 import { MONTHS } from '../common/format';
 
 /** Earliest date − 3 working days → latest date + 5 working days; the status date counts as one of the dates. */
@@ -96,15 +96,43 @@ export const showsHolidays = (scale: GanttScale): boolean => scale.px >= PX_PER_
 /** Weekend columns are drawn whenever a day is at least Week-wide (SPEC §7.8): Day, Week, a wide Fit, the appendix. */
 export const showsWeekends = (scale: GanttScale): boolean => scale.px >= PX_PER_DAY.week;
 
-/** Days of the range (from 0) that fall on a Saturday or a Sunday: working days, marked so the week reads (§7.8). */
-export function weekendDays(scale: Pick<GanttScale, 'start' | 'days'>): number[] {
+/**
+ * Days of the range (from 0) that fall on a Saturday or a Sunday the project works (`workingDays`, every day when
+ * undefined): marked so the week reads (§7.8). A weekend day it doesn't work is a non-working day (daysOff).
+ */
+export function weekendDays(scale: Pick<GanttScale, 'start' | 'days'>, workingDays?: readonly number[]): number[] {
   const first = toDayNumber(scale.start);
   const out: number[] = [];
   for (let i = 0; i < scale.days; i++) {
-    const dow = dayOfWeek(fromDayNumber(first + i));
-    if (dow === 0 || dow === 6) out.push(i);
+    const dow = weekdayOf(first + i);
+    if ((dow === 0 || dow === 6) && worked(dow, workingDays)) out.push(i);
   }
   return out;
+}
+
+/** Whether the project works this weekday (0 = Sunday); every day when no working days are set (§4.2). */
+const worked = (weekday: number, workingDays: readonly number[] | undefined) =>
+  workingDays === undefined || workingDays.length === 0 || workingDays.includes(weekday);
+
+/** The tooltip of a weekday the project doesn't work (§7.8). */
+export const DAY_OFF = 'Non-working day';
+
+/**
+ * The non-working days (§2, §7.8) of the `days` days from `start`, in date order: its holidays, and every day whose
+ * weekday the project doesn't work, described as "Non-working day" (a holiday keeps its own description).
+ */
+export function daysOff(start: ISODate, days: number, holidays: readonly Holiday[], workingDays?: readonly number[]): Holiday[] {
+  const first = toDayNumber(start);
+  const last = first + days - 1;
+  const byDay = new Map<number, Holiday>();
+  for (const h of holidays) {
+    const n = toDayNumber(h.date);
+    if (n >= first && n <= last && !byDay.has(n)) byDay.set(n, h);
+  }
+  for (let n = first; n <= last; n++) {
+    if (!worked(weekdayOf(n), workingDays) && !byDay.has(n)) byDay.set(n, { date: fromDayNumber(n), description: DAY_OFF });
+  }
+  return [...byDay].sort(([a], [b]) => a - b).map(([, h]) => h);
 }
 
 /** Width of a timeline chip ("Today", "Status · 13 Nov"), from its text. */

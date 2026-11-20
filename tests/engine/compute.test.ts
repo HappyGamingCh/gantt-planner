@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createCalendar } from '../../src/engine/calendar';
-import { compute } from '../../src/engine/compute';
+import { compute, computePlan, planCalendar } from '../../src/engine/compute';
 import { SAMPLE_STATUS_DATE, sampleData } from '../../src/sample/sampleData';
 import { makeProject, makeTask, taskOf } from './helpers';
 
@@ -90,5 +90,32 @@ describe('compute', () => {
     // §3.4 "well under 10 ms" holds on a planner's PC; a shared CI runner (slower, measuring coverage) only has to
     // catch a gross slowdown.
     expect(times[7]).toBeLessThan(process.env.CI ? 50 : 10);
+  });
+});
+
+describe('a Mon–Fri project — SPEC §4.2, §5.1, §5.4', () => {
+  // Project Start Fri 6 Nov 2026; Sat and Sun are non-working days.
+  const plan = {
+    project: makeProject({ projectStart: '2026-11-06', statusDate: '2026-11-13', workingDays: [1, 2, 3, 4, 5] }),
+    tasks: [
+      makeTask(1, { plannedDuration: 5 }),
+      makeTask(2, { plannedDuration: 2, predecessorsText: '1' }),
+      makeTask(3, { plannedDuration: 1, plannedStart: '2026-11-07' }), // a Saturday: moved to Monday
+    ],
+    resources: [],
+    holidays: [{ date: '2026-11-16', description: 'Company day' }],
+  };
+
+  it('planCalendar takes the working days and the holidays', () => {
+    const cal = planCalendar(plan);
+    expect([cal.isWorkday('2026-11-07'), cal.isWorkday('2026-11-09'), cal.isWorkday('2026-11-16')]).toEqual([false, true, false]);
+  });
+
+  it('durations, links and the start of a root task skip the days off', () => {
+    const r = computePlan(plan);
+    expect([taskOf(r, 1).plannedStart, taskOf(r, 1).plannedFinish]).toEqual(['2026-11-06', '2026-11-12']); // Fri → Thu
+    expect([taskOf(r, 2).plannedStart, taskOf(r, 2).plannedFinish]).toEqual(['2026-11-13', '2026-11-17']); // past Mon 16
+    expect(taskOf(r, 3).plannedStart).toBe('2026-11-09');
+    expect(r.summary.durationDays).toBe(7); // Fri 6 … Tue 17: 12 days less 4 weekend days and the holiday
   });
 });

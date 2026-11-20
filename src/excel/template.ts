@@ -5,6 +5,7 @@ import type { Holiday } from '../engine/types';
 import { excelDate } from './cells';
 import { newWorkbook, validationsOf, type DataValidation, type Workbook, type Worksheet } from './exceljs';
 import { HOLIDAYS_NOTE, README_LINES, README_TITLE } from './readme';
+import { formatWorkingDays } from './workingDays';
 import {
   CALC_NOTE,
   DATE_FORMAT,
@@ -89,6 +90,7 @@ export function addProjectSheet(wb: Workbook): Worksheet {
     if (field === 'Project Start' || field === 'Status Date') ws.getCell(i + 2, 2).numFmt = DATE_FORMAT;
     if (field === 'Last Saved') ws.getCell(i + 2, 2).numFmt = DATE_TIME_FORMAT;
     if (field === 'Mode') ws.getCell(i + 2, 2).value = 'Plan';
+    if (field === 'Working Days') ws.getCell(i + 2, 2).value = formatWorkingDays(undefined);
   });
   return ws;
 }

@@ -10,7 +10,7 @@ This document is the single source of truth for building Gantt Planner. Build it
 
 Gantt Planner is a lightweight, offline, single-file web app — a simplified MS Project — for planning and tracking one project on a Gantt chart. An Excel workbook (`.xlsx`, kept on OneDrive) is the data store. The app opens the workbook, fills in everything that can be calculated, lets the user add/edit/delete tasks, and writes back to the **same file**. One click produces a printable progress report (S-curve, overall progress, progress by assignee, and more), and another prints the grid and Gantt as they are shown, to send the plan out.
 
-- Users: engineers and planners running projects of **≤ 200 tasks** (typically 100–150), working **every day of the week** (e.g. maintenance turnarounds); non-working days are listed in the `Holidays` sheet.
+- Users: engineers and planners running projects of **≤ 200 tasks** (typically 100–150), often working **every day of the week** (e.g. maintenance turnarounds); a project can set its working days of the week (e.g. Mon–Sat), and other non-working days are listed in the `Holidays` sheet.
 - UI language: **English**. Task data (names, remarks, people) MAY be Thai.
 - Browsers: latest **Microsoft Edge** and **Google Chrome** on Windows.
 
@@ -34,7 +34,8 @@ Gantt Planner is a lightweight, offline, single-file web app — a simplified MS
 
 | Term | Meaning |
 |---|---|
-| Working day | Any day of the week (weekends included) that is not listed in the `Holidays` sheet |
+| Working day | A day whose weekday is one of the project's working days (Project › `Working Days`; every day of the week, weekends included, when it is blank) and that is not listed in the `Holidays` sheet |
+| Non-working day | Any other day: a holiday, or a weekday the project doesn't work (e.g. Sunday in a Mon–Sat project) |
 | Planned (= Baseline) | The agreed plan: Planned Start / Duration / Finish. Used for the planned S-curve and for variance |
 | Actual | What really happened: Progress, Actual Start, Actual Finish |
 | Status date (SD) | The "data date": progress is reported **as of the end of** this day. Set in the header |
@@ -124,8 +125,8 @@ Gantt Planner is a lightweight, offline, single-file web app — a simplified MS
 |---|---|---|
 | `Project` | Key/value settings | Values only |
 | `Tasks` | One row per task | Yes |
-| `Resources` | List of assignees (people, teams, contractors) | Appends new names |
-| `Holidays` | Non-working dates | Never (read only) |
+| `Resources` | List of assignees (people, teams, contractors) | Appends new names; writes the rows the user changed in Settings › Resources (§4.8) |
+| `Holidays` | Non-working dates | Only the rows the user changed in Settings › Calendar (§4.8) |
 | `Read Me` | Instructions for people who open the file in Excel | Created by the template only; never modified afterwards |
 
 - Sheet names match case-insensitively.
@@ -143,6 +144,7 @@ Column A = `Field`, column B = `Value`.
 | Project Start | date | Earliest Planned Start of root tasks, else today | Start for root tasks with blank Planned Start |
 | Status Date | date | Today (local) | |
 | Mode | `Plan` / `Track` | `Plan` | Last used mode |
+| Working Days | text | Every day of the week | The weekdays the project works, e.g. `Mon, Tue, Wed, Thu, Fri, Sat` (§4.7). Set in Settings › Calendar |
 | Last Saved | date-time | — | Written by the app |
 | App Version | text | — | Written by the app (`1.0.0`) |
 
@@ -191,16 +193,19 @@ Columns are located **by header name** (case- and whitespace-insensitive, aliase
 
 - Names in `Assigned` that are not listed are appended on save (blank Type, auto color) and reported as "Filled".
 - Blank Color → next color from the resource palette (§7.2).
-- No `Name` header in row 1 while the sheet holds other data → `W_RESOURCES_NO_HEADER`; the sheet is not read (types and colours are not used), and Save leaves it as it is: no `Name` column is appended and no assignee rows are added, so nothing mixes into the user's columns and the warning returns on every open until the header is fixed in Excel.
+- The list can be edited in the app (Settings › Resources, §7.14): add, rename, set Type and Color, delete an unused name. Save writes those rows in place (§4.8).
+- No `Name` header in row 1 while the sheet holds other data → `W_RESOURCES_NO_HEADER`; the sheet is not read (types and colours are not used), and Save leaves it as it is: no `Name` column is appended and no assignee rows are added, so nothing mixes into the user's columns and the warning returns on every open until the header is fixed in Excel. Settings › Resources is then read-only and says why.
 
 ### 4.5 `Holidays` sheet
 | Date | Description |
 |---|---|
 | date | text |
 
-The template ships with an empty table and a note in row 2 of column D: "Add non-working days here (e.g. public holidays). Every other day, weekends included, is a working day."
+The template ships with an empty table and a note in row 2 of column D: "Add non-working days here (e.g. public holidays). The working days of the week are set in the Project sheet (Working Days)."
 
-No `Date` header in row 1 (a renamed header, or a title row above it) while the sheet holds dates → `W_HOLIDAYS_NO_HEADER` with the number of dates found; none of them is used. Buddhist-era years (§4.7) are converted without a Change, because this sheet is never written.
+The list can be edited in the app (Settings › Calendar, §7.14); Save then writes only the rows that changed (§4.8).
+
+No `Date` header in row 1 (a renamed header, or a title row above it) while the sheet holds dates → `W_HOLIDAYS_NO_HEADER` with the number of dates found; none of them is used. A sheet with content but no `Date` header is never written, and Settings › Calendar shows its holidays as read-only, saying why. Buddhist-era years (§4.7) are converted without a Change: Save never rewrites a holiday the user didn't change, so the cell keeps its text.
 
 ### 4.6 `Read Me` sheet (template content)
 Short, plain English:
@@ -211,7 +216,7 @@ Short, plain English:
 5. Planned Duration wins over Planned Finish when they disagree.
 6. Gantt Planner can't keep charts, pivot tables, text boxes, shapes, sparklines or Excel tables anywhere in this file: saving removes them (a table's cells stay, as a normal range). Please don't add images, formulas or merged cells to the `Tasks` sheet.
 7. Close this file in Excel before saving from Gantt Planner. Use OneDrive version history to restore older versions.
-8. Assigned: separate several names with commas. Every day is a working day except the dates in the `Holidays` sheet.
+8. Assigned: separate several names with commas. Working days: the days in Working Days in the `Project` sheet (e.g. Mon-Sat; blank = every day), except the dates in the `Holidays` sheet.
 9. Named ranges must be a fixed range, such as `Resources!$A$2:$A$200`; saving removes or changes other names. For a drop-down list fed from another sheet, name its range and use `=ThatName` as the list's source.
 10. Major tasks: Level sets a row's place in the outline (1 = top). The rows under a row with a deeper Level are its tasks, as indenting in MS Project. A major task's dates, duration and progress are calculated: only its Task, Level and Remarks are yours to edit.
 
@@ -223,6 +228,7 @@ Short, plain English:
 - **Text** — trim; collapse repeated spaces in task names, assignee names and resource names. The app shows a task name on one line: line breaks (Alt+Enter) become spaces. The cell keeps its line breaks (§4.8): a name whose lines are already tidy is not a change; otherwise each line is trimmed with single spaces and blank lines are dropped (`corrected`, "Spaces tidied", to the tidied lines). In `Assigned` a line break is not a separator: inside a name it becomes a space (Change reason 'Line break read as a space; separate names with ","'); next to a `,` or `;` it is only a space ('Names separated with ", "').
 - **Merged cells (Tasks)** — a merged cell other than the merge's first cell reads the merge's value only in the first cell's column: a value merged down (an Assigned cell shared by several steps) belongs to every row; a heading merged across a row stays in its own cell (the other cells read blank). A merge that starts left of the Task cell and covers it (Merge & Center over the whole row, the text in the ID cell) is read as the Task: its first cell reads blank, so the heading becomes a task with that name and the next free ID, and Save writes the text into the Task cell. One warning `W_MERGED_CELLS` lists the merges below the header; Save splits them (§4.8).
 - **Level** — a whole number 1–8 (`MAX_LEVEL`); another number is rounded and clamped (`corrected`). Text that isn't a number → `W_BAD_NUMBER`, treated as blank, original text kept on save (§4.8). When no row has a Level (no column, or every cell blank) every row is Level 1 and nothing is recorded. Otherwise a blank Level takes the Level of the row below it — the last row, of the row above (`filled`, "Same level as the row below" / "above"); the first row is Level 1, and a row is at most one Level deeper than the row above (`corrected`). On a major-task row (§5.12) only Task, Level and Remarks are inputs: Assigned and Predecessors are written back as typed but not used (predecessors there → `W_SUMMARY_PREDS`), and its date, duration, progress and actual cells are calculated.
+- **Working Days** (Project sheet) — a list of weekdays separated by `,`, `;`, `/` or spaces, with ranges `Mon-Fri` (`-` or `–`; a range may wrap past Sunday, `Sat-Tue`), case-insensitive: English names (`Mon`, `Monday`, `Tue`, `Tues`, `Thu`, `Thur`, `Thurs`, …, a trailing dot allowed) or Thai ones (`จ`, `อ`, `พ`, `พฤ`, `ศ`, `ส`, `อา` with or without dots, or the full name with or without `วัน`: `จันทร์`, `วันอาทิตย์`), and `All`, `Every day`, `ทุกวัน` for all seven. Blank, or no field → every day, with nothing recorded (a file from before this field opens unchanged). Anything else → warning `W_BAD_WORKING_DAYS`, every day is a working day, and the text is written back unchanged until the working days are set in the app (§4.8).
 - **Predecessors** that Excel already turned into a number with a thousands format (`5,120` → 5120) or into a date (`3-1` → 1 Mar) → `W_PRED_NOT_TEXT`; the cell is written back as it is (the user must retype it).
 - **Planned Start / Planned Duration** that can't be parsed are recorded per task (`Task.unparsed`) so Save keeps their text (§4.8).
 
@@ -243,8 +249,9 @@ Short, plain English:
 - **Major tasks (§5.12):** on a major-task row Planned Start, Planned Duration, Progress, Actual Start and Actual Finish are calculated too, so Save writes the roll-up there; Successors is blank; Assigned and Predecessors are written back as typed. Level is written on every row (normalized, §4.7).
 - **Outline in Excel:** while some row is below Level 1, Save shows the outline: a major task's Task cell is bold and every other Task cell is not, each Task cell is indented by Level − 1, and each row's outline level (row grouping) is Level − 1 (at most 7, Excel's limit) with summary rows above their detail, so Excel's +/− buttons collapse each major task. The app then owns the Task column's bold and indent and the Tasks sheet's row grouping; a plan without major tasks keeps them as the file has them.
 - Missing known columns → append to the right of the header row with the correct header style, width and validation. Level is the exception: a sheet without it gets it only once some row is below Level 1 (the template has it after ID). Keys of `task.extra` without a column → append a plain column with that header.
-- **Project:** update `Value` cells by `Field`; append missing fields.
-- **Resources:** append unknown names, with the app's Type/Color when it has them, else blank Type and the resource palette color for the name's position in the list. A Resources sheet with content but no `Name` header in row 1 is left as it is (`W_RESOURCES_NO_HEADER`, §4.4).
+- **Project:** update `Value` cells by `Field`; append missing fields. Working Days is written as the file had it (the cell's text, even text the app couldn't read) until the user changes the working days in the app; then, and for a file without the field, as the list of days in week order from Monday, e.g. `Mon, Tue, Wed, Thu, Fri, Sat, Sun`.
+- **Resources:** rows stay where they are; Save never moves or deletes a row of this sheet. Each app resource keeps the row it was read from (renamed or not); a resource added in the app, and an assignee not listed yet, goes below the last row, so the list keeps its order. In a resource's row only the cells whose value changed are written: the name; the Type, unless the cell holds text the app doesn't read as a type and the user didn't set one; the Color likewise. A row whose name the app no longer has — a removed resource, the name a resource had before it was renamed, or a repeat of either — has its Name, Type and Color cells emptied; its other cells stay. An appended name gets the app's Type/Color when it has them, else blank Type and the resource palette color for its position in the list. Rows that repeat a name still listed, and rows without a name, are left alone. A Resources sheet with content but no `Name` header in row 1 is left as it is (`W_RESOURCES_NO_HEADER`, §4.4).
+- **Holidays:** rows stay where they are, as in Resources. Each row whose Date the reader read keeps it while the app still has that date; its Description cell is written only when the description changed. A row whose date the app no longer has has its Date and Description cells emptied (its other cells stay). New dates go, in date order, to the first rows whose Date and Description cells are both blank, else below the last row, as a date with the `dd-mmm-yy` format (a cell that already has a date format keeps it). Rows with an unreadable date are left alone; so is the sheet when it has content but no `Date` header (§4.5). The template's note in column D is never moved or cleared. A sheet with neither content nor headers gets the `Date` and `Description` headers first.
 - After a successful write: set Last Saved, clear dirty flag, update the `lastModified` baseline.
 
 ---
@@ -256,7 +263,7 @@ All functions are pure and unit-tested (§12). Dates are ISO strings `YYYY-MM-DD
 ### 5.1 Calendar (`engine/calendar.ts`)
 | Function | Definition |
 |---|---|
-| `isWorkday(d)` | Not a holiday — all 7 days of the week are working days |
+| `isWorkday(d)` | Its weekday is a working day (Project › Working Days: all seven when blank, §4.2) and it is not a holiday. With no working weekday at all (only an engine caller can make one) every weekday counts |
 | `snapForward(d)` | `d` if workday, else the next workday after `d` |
 | `nextWorkday(d)` | First workday strictly after `d` |
 | `addWorkdays(d, n)` | Start at `snapForward(d)`, move `n` workdays forward (n > 0) or backward (n < 0), skipping non-working days. `addWorkdays(d, 0) = snapForward(d)` |
@@ -427,6 +434,7 @@ On the forecast network of tasks that are not completed:
 | E_NO_TASK_HEADER | error | Tasks sheet: row 1 has no "Task" header{hint} | — |
 | W_COLUMNS_NOT_FOUND | warning | Tasks sheet: columns not found: {missing}. Kept as your own columns: {extras}. If one of them is meant to be a planner column, rename its header in Excel and open the file again | — |
 | W_HOLIDAYS_NO_HEADER | warning | Holidays sheet: no "Date" header in row 1; its dates ({n}) were not used, so they count as working days | — |
+| W_BAD_WORKING_DAYS | warning | Project sheet: Working Days "{text}" is not a list of days such as Mon-Sat or Mon, Tue, Wed, so every day counts as a working day. Set the working days in Settings › Calendar | — |
 | W_RESOURCES_NO_HEADER | warning | Resources sheet: no "Name" header in row 1, so its types and colors were not read and Save leaves the sheet as it is (new assignees are not added). Rename the column with the names to "Name" in Excel and open the file again | — |
 | E_SUMMARY_LINK | error | Task {id}: {pid} is a major task; link to a task inside it | Remove link |
 | W_SUMMARY_PREDS | warning | Major task {id}: its predecessors are not used; link the tasks inside it | — |
@@ -615,7 +623,7 @@ New file default: Plan mode. The sample opens in Track mode.
 ### 7.4 Header
 - Left: small app mark (diamond SVG), **project name** (click to edit inline), below it the **file chip**: file name · save state (`Saved 11:58` / amber dot `Unsaved changes` / `Saving…` / `Opening plan.xlsx…`; `Downloaded 11:58` after a fallback save; in fallback mode, before the first download, `· Save downloads a copy` follows the state, §3.5). `Saving…` starts once Save as… has a file, not while the picker is open.
 - Center: **Mode** segmented control with an icon on each option and a tooltip stating its purpose (§6: "Plan mode: build and adjust the baseline (dates, durations, links)", "Track mode: update progress against the baseline"). The selected option is a white thumb with a 1 px ring: violet in Plan, blue in Track. Under it, a caption: Plan "Editing the baseline" (violet pill with a pencil icon), Track "Baseline locked" (lock icon).
-- Right: **Status date** date input + "Today" text button · **Issues badge** (`!` + count of errors and warnings — the same number as the Problems tab; amber if warnings, red if errors; hidden when 0; its tooltip and accessible name say it in words, e.g. "2 errors, 1 warning") · **Open** (secondary) · **Save** (primary; disabled when clean) · **Report** (secondary) · **Print Gantt** (secondary, §9.4; below 1100 px a printer icon with the same tooltip and name) · **More (…)** menu (borderless icon button): New plan, Save as…, Download blank template, Project settings (name, owner, project start), Renumber IDs, Keyboard shortcuts, About.
+- Right: **Status date** date input + "Today" text button · **Issues badge** (`!` + count of errors and warnings — the same number as the Problems tab; amber if warnings, red if errors; hidden when 0; its tooltip and accessible name say it in words, e.g. "2 errors, 1 warning") · **Open** (secondary) · **Save** (primary; disabled when clean) · **Report** (secondary) · **Print Gantt** (secondary, §9.4; below 1100 px a printer icon with the same tooltip and name) · **More (…)** menu (borderless icon button): New plan, Save as…, Download blank template, Project settings…, Calendar…, Resources… (the three tabs of the Settings dialog, §7.14), Renumber IDs, Keyboard shortcuts, About.
 - When SD ≠ today, show a subtle hint under the date: "Today is 22 Oct".
 - The header has two rows. Every control — the Mode switch, the status date (label, input, Today), the Issues badge, Open, Save, Report, Print Gantt and More — sits on one top row; the captions under them ("Baseline locked" / "Editing the baseline", "Today is 22 Oct") make the second row, level with the file chip under the project name. The hint coming or going never moves a control.
 
@@ -681,7 +689,7 @@ Equal-width cards (5 in Track mode, 6 compact cards in Plan mode), separated by 
 ### 7.8 Gantt (custom SVG)
 - **Scale:** Day = 32 px/day · Week = 12 px/day · Month = 4 px/day · Fit = choose the largest scale that fits the visible width (min Month, max Day). Range = earliest date − 3 working days → latest date + 5 working days, with SD counted as one of the dates. Default zoom: Fit.
 - **Timeline header (2 tiers, `--head-bg` band — `--plan-wash` in Plan mode — with a `--border-strong` rule below; the Color by / Critical corner shares the band):** top = `Nov 2026` (12px semibold `--text`, one step stronger than the 11px `--text-2` day labels), the name staying at the left edge while any of its month is in view; bottom = day numbers (Day), `W46 · 10 Nov` (Week), week ticks (Month). When single days are shown (Day zoom, Fit at 20 px/day or more, the report's Gantt appendix), the header and the chart body draw a line at every day boundary, Monday lines in `--border-strong`.
-- **Non-working days (holidays):** `--nonwork` columns at every zoom whenever a day is at least 4 px wide (Day, Week, Month, Fit, and the report's Gantt appendix), with the holiday description as a tooltip in the timeline header. In the header a holiday fills its day cell when the bottom tier shows day numbers; with week labels or Monday ticks it is a 4 px strip at the foot of the tier (the whole cell still shows the tooltip), so no week label runs across a grey box. The columns are drawn over the row bands with multiply blending, so a selected or hovered row stays one continuous band.
+- **Non-working days (holidays and the weekdays the project doesn't work, §2):** `--nonwork` columns at every zoom whenever a day is at least 4 px wide (Day, Week, Month, Fit, and the report's Gantt appendix), with the holiday description as a tooltip in the timeline header ("Holiday" when it has none; "Non-working day" on a weekday off). In the header a holiday fills its day cell when the bottom tier shows day numbers; with week labels or Monday ticks it is a 4 px strip at the foot of the tier (the whole cell still shows the tooltip), so no week label runs across a grey box. The columns are drawn over the row bands with multiply blending, so a selected or hovered row stays one continuous band.
 - **Status date line** (Track): 2 px `--accent`, dashed, with a 4 px white outline in step with the dashes so it stays visible where it crosses a solid bar; label chip at the top "Status · 13 Nov". **Today line**: 1 px `--text-3` dashed, label "Today"; in Track mode shown only when today ≠ SD (Plan mode has no status-date line, so it always shows today). Both chips sit in the top tier of the timeline, kept inside the chart and clear of the Color by / Critical corner at its right end, with their line running down through the bottom tier; a Today chip that cannot sit on its line (beside the Status chip, or clear of the corner) names its date: "Today · 31 Oct". The today line is drawn only when it falls inside the chart. The lines cross the bars but pass under the bar labels and the timeline's day and week labels, whose halo (5 px on bar labels, 6 px in the timeline) stops a dashed line around the whole label.
 - **Plan mode bars:** 16 px tall, radius 4, fill `--accent` (or the assignee color when Color by = Assignee); hovering a bar darkens it to `--accent-hover` (an assignee color stays as is). Label to the right of the bar = assignee names (12px `--text-2`), with a halo in its lane's colour (white, the hover grey or the selected blue).
 - **Track mode bars:**
@@ -689,7 +697,7 @@ Equal-width cards (5 in Track mode, 6 compact cards in Plan mode), separated by 
   - Main bar: forecast/actual window (FS′→FF′), 14 px, radius 4. Done part = solid status color; remaining part = status soft color with a 1 px status-color border. On the selected row the remaining part of In progress and Not started bars is white (border unchanged), so it doesn't merge with the blue lane. Status colors: Completed `--done`, In progress `--progress`, Late `--late`, Not started `--idle`.
   - Label right of the bar: `60%`; Late adds ` · +3d` in red.
 - **Major-task bars:** 8 px bar across its tasks (PS→PF in Plan mode, FS′→FF′ in Track mode) with 4 px downward end caps, in `--summary`; in Track mode the done part is solid `--summary` and the rest `--summary-soft` with a 1 px `--summary` border, over the 4 px baseline. Label in Track mode: `62%` (Late adds ` · +3d` in red); none in Plan mode. Not draggable; no critical outline.
-- **Weekends:** Saturday and Sunday are working days (§2) but are marked so the week reads at a glance: in the timeline's day numbers their cell is `--weekend` with the number in `--weekend-text` (a holiday's grey wins), and whenever a day is at least 12 px wide (Day, Week, Fit at 12 px/day or more, the report's Gantt appendix) the chart body tints their columns `--weekend-col` (multiply, like holidays), under the holiday columns and the grid lines.
+- **Weekends:** a Saturday or Sunday the project works (§2) is marked so the week reads at a glance (one it doesn't work is a non-working day, above): in the timeline's day numbers its cell is `--weekend` with the number in `--weekend-text` (a holiday's grey wins), and whenever a day is at least 12 px wide (Day, Week, Fit at 12 px/day or more, the report's Gantt appendix) the chart body tints its column `--weekend-col` (multiply, like holidays), under the holiday columns and the grid lines.
 - **Milestones:** 12 px diamond (`--text` in Plan, status color in Track; a Not started milestone is hollow: white with a 1.5 px `--idle` outline, also in the report's Gantt appendix) with the date as label.
 - **Dependency arrows:** 1.25 px `--arrow`, rounded elbows, 4 px arrowheads. FS: from bar end → right 8 px → vertical → into successor start. SS: from bar start → left 8 px → vertical → into successor start. Plan mode draws every arrow; on hover/select of a task, its arrows turn `--accent` and other arrows dim to 40%. Track mode draws only the hovered or selected task's arrows (to its predecessors and successors), in `--accent`, between the forecast/actual bars. Bar labels start past the 8 px run, so an arrow never crosses their first letter.
 - **Critical path** (M5, toggle): critical bars get a 2 px `--late` outline 2 px clear of the bar (a milestone's ring diamond is 4.5 px larger on each axis), and their arrows turn red.
@@ -784,6 +792,17 @@ The overlay (`?`) lists this table plus the mouse gestures. Keys that work only 
 ### 7.13 Persisted UI preferences (localStorage, try/catch)
 One key, `gantt-planner:prefs`: zoom, grid width per mode (or "fit the columns"), density, visible columns per mode, color-by, critical path on/off, KPI strip collapsed, the report options — sections on/off (Gantt appendix included) and the look-ahead window (days; a saved weeks value falls back to 7) — and the Print Gantt paper (A4 / A3). "Prepared by" is not stored (§9.1, §9.4). Where storage is unavailable the defaults are used. **Never** store project data in localStorage.
 
+
+### 7.14 Settings (More › Project settings…, Calendar…, Resources…)
+One dialog, "Settings", with three tabs — **General**, **Calendar**, **Resources** (a tab list: Left/Right arrow keys move between them); each menu item opens it on its tab. Edits in every tab are drafts: **Apply** applies them all as one undo step (§8) and closes the dialog; **Cancel** and Esc drop them.
+- **General:** Project name, Owner, Project start, with the "Also move N tasks…" option (§8).
+- **Calendar:**
+  - *Working days:* seven checkboxes, Mon … Sun (the week starts on Monday, §7.2); the last checked day can't be unchecked. Under them: "6 working days a week".
+  - *Holidays (N):* From date, optional To date (a range of at most 366 days), Description and **Add**, which adds every date of the range not listed yet ("Already a holiday" when none is new). The list is sorted by date: the date (`Mon 13 Apr 2026`), its Description field and a remove button ("Remove holiday 13 Apr 2026"); a holiday on a weekday the project doesn't work says "not a working day anyway".
+  - Track mode adds the note "The baseline stays as it is; forecasts, variance and the S-curve use the new calendar."
+  - When the Holidays sheet can't be written (§4.5) the list is read-only, with the note "This file's Holidays sheet has no Date header in row 1, so its dates can't be read or changed here. Fix the header in Excel and open the file again."
+- **Resources:** every assignee — the Resources sheet's order, then names used on tasks but not listed yet — with Name, Type (blank, Person, Team, Contractor), Color (a swatch that opens the resource palette, §7.2, and a custom color), the number of tasks that use it, and a remove button. Remove is disabled while tasks use the name ("Used by 3 tasks: remove it from them first"). **Add resource** adds a row at the end and puts the cursor in its name. A name is required, unique (any case) and has no `,` or `;` (they separate names in Assigned): Apply refuses an invalid name, says why under the field and focuses it. When the Resources sheet has no Name header (§4.4) the list is read-only, with a note saying so.
+- **Apply:** renaming a resource renames it on every task that has it (any case). A resource without a color of its own keeps the color it had when a resource above it is removed (the palette goes by position, §7.2): that color becomes its own and is written to its Color cell. A calendar change recalculates the plan: when planned dates move (Plan mode, or tasks added this session in Track mode), the toast "Plan recalculated — N tasks moved" · **Review** opens the Changes list, as a switch to Plan mode does (§6, §7.11).
 ---
 
 ## 8. Editing behaviour (business rules in the UI)
@@ -805,7 +824,10 @@ One key, `gantt-planner:prefs`: zoom, grid width per mode (or "fit the columns")
 | Edit Planned Duration (Plan) | 0–3650 working days (`MAX_DAYS`); a larger value is refused with the toast "Duration must be 0–3650 days" |
 | Edit Planned Finish (Plan) | Sets Planned Duration = `countWorkdays(PS, new PF)` (at least 1; at most 3650, as above). A finish before Planned Start is refused (nothing changes) with the toast "Finish can't be before the start (2 Nov) — set Duration to 0 for a milestone" |
 | Edit Planned Start on linked task | Disabled (hint: add lag) |
-| Change Project Start (Plan) | In Project settings, when the new date differs and root tasks (no links) start on the old project start, a checked option "Also move N tasks that start on 28 Sep 26 to 5 Oct 26 (linked tasks follow)" ("the task that starts" when there is one) appears under the date. Apply does both as one undo step; Cancel and Esc drop every edit |
+| Change Project Start (Plan) | In Settings › General, when the new date differs and root tasks (no links) start on the old project start, a checked option "Also move N tasks that start on 28 Sep 26 to 5 Oct 26 (linked tasks follow)" ("the task that starts" when there is one) appears under the date. Apply does both as one undo step; Cancel and Esc drop every edit |
+| Change working days or holidays | Settings › Calendar (§7.14), with the other tabs as one undo step. The plan is recomputed with the new calendar: in Plan mode a root task whose Planned Start is now a non-working day moves to the next working day and every planned date follows (toast "Plan recalculated — N tasks moved" · **Review**); in Track mode the baseline stays (§5.4) and forecasts, variance, status and the S-curve change |
+| Rename a resource | Settings › Resources: the name changes on every task that has it (any case), and in its Resources row on save |
+| Remove a resource | Settings › Resources, only while no task uses it; its Resources row is emptied on save (§4.8) |
 | Progress set > 0 with no Actual Start (Track) | Set Actual Start = SD; toast "Actual start set to 13 Nov — change if needed" |
 | Progress set to 100 with no Actual Finish | Set Actual Finish = SD (and Actual Start = SD if blank) |
 | Progress set on a milestone (Track) | A milestone is reached or not: any value above 0 means 100 — Actual Finish = its Actual Start, or SD when blank (and Actual Start = SD if blank). 0 clears Actual Start and Actual Finish (toast "Milestone not reached — actual dates cleared"): an Actual Start alone would mark it reached (§5.5) |
@@ -813,7 +835,7 @@ One key, `gantt-planner:prefs`: zoom, grid width per mode (or "fit the columns")
 | Actual Finish cleared | Progress becomes 99 if it was 100 (toast explains). On a milestone: Actual Start is cleared too and Progress becomes 0 (toast "Milestone not reached — actual dates cleared") |
 | Status date changed | Recompute everything; nothing is written to tasks. A date outside 1950–2199 is ignored |
 | Date typed outside 1950–2199 | Planned Start, Planned Finish, Actual Start, Actual Finish, Project Start (Project settings) and New plan's Project Start: refused with the toast "Enter a date between 1950 and 2199"; the dialog stays open (§4.7 reads the same range) |
-| Undo/redo | Snapshot of `{project, tasks, resources}` per action; cap 100; saving does not clear history. An edit that leaves the plan as it was (a value re-entered, Unlink with no links between the selected tasks — toast "No links between the selected tasks") is no step: no "Unsaved changes", redo kept. The Changes list follows undo and redo |
+| Undo/redo | Snapshot of `{project, tasks, resources, holidays}` per action; cap 100; saving does not clear history. An edit that leaves the plan as it was (a value re-entered, Unlink with no links between the selected tasks — toast "No links between the selected tasks") is no step: no "Unsaved changes", redo kept. The Changes list follows undo and redo |
 
 ---
 
@@ -848,7 +870,7 @@ One key, `gantt-planner:prefs`: zoom, grid width per mode (or "fit the columns")
 **Page 2 — Progress by assignee**
 - Table: Assignee · Type · Tasks · Completed · In progress · Late · Planned % · Actual % · Variance (pts), sorted by variance ascending (worst first). Variance (pts) text takes its schedule-state colour (§5.8): Ahead green, On track uncoloured, Slightly behind amber, Behind red.
 - Horizontal grouped bar chart: Planned % vs Actual % per assignee, as images of at most 20 assignees each ("Planned vs actual (cont.)" for the next ones), so none is taller than a printed page. Names longer than 22 characters end with "…" (Thai vowel and tone marks don't count); the table has them in full.
-- **Workload heatmap**: rows = assignees (names wrap to at most two lines); cell = number of not-completed tasks (milestones excluded) whose forecast window overlaps the column. When the forecast finish is at most 42 days after Project Start: one column per day for SD+1 … min(SD+14, forecast finish); holidays are hatched, left blank and not counted (a note under the heatmap says so). Otherwise: one column per week from the week of SD to the week of the forecast finish, at most 8. Shades 0 / 1 / 2 / 3+ of `--accent` (3+ = full `--accent` with white numbers); numbers shown, except 0, which is an empty shaded cell. When no task is open, or that range is empty (forecast finish on or before SD; for weekly columns, before the week of SD), the heatmap shows "No open tasks after the status date." instead.
+- **Workload heatmap**: rows = assignees (names wrap to at most two lines); cell = number of not-completed tasks (milestones excluded) whose forecast window overlaps the column. When the forecast finish is at most 42 days after Project Start: one column per day for SD+1 … min(SD+14, forecast finish); non-working days (§2) are hatched, left blank and not counted (a note under the heatmap says so). Otherwise: one column per week from the week of SD to the week of the forecast finish, at most 8. Shades 0 / 1 / 2 / 3+ of `--accent` (3+ = full `--accent` with white numbers); numbers shown, except 0, which is an empty shaded cell. When no task is open, or that range is empty (forecast finish on or before SD; for weekly columns, before the week of SD), the heatmap shows "No open tasks after the status date." instead.
 
 **Page 3 — Needs attention**
 - **Late tasks**: ID · Task · Assigned · Planned Finish · Forecast Finish · Variance · Progress · Remarks; sorted by variance descending. Critical flag icon from M5. Late milestones are listed too, marked with a diamond, with "—" for Progress; a line above the table reconciles the count with page 1: "3 tasks and 1 milestone are late." (the task number is the KPI late count).
@@ -950,11 +972,13 @@ export interface Project {
   name: string; owner: string;
   projectStart: ISODate; statusDate: ISODate;
   mode: 'Plan' | 'Track';
+  workingDays?: number[];                      // working weekdays, 0 = Sunday … 6 = Saturday, ascending; undefined = all seven (§4.2)
+  workingDaysText?: string;                    // the Working Days cell's text as read; Save writes it back until the user changes the working days (§4.8)
 }
 
-export interface Resource { name: string; type?: 'Person' | 'Team' | 'Contractor'; color?: string }
+export interface Resource { name: string; type?: 'Person' | 'Team' | 'Contractor'; color?: string; source?: unknown }  // source: the row it was read from (opaque outside the Excel layer)
 export interface Holiday { date: ISODate; description: string }
-export interface Plan { project: Project; tasks: Task[]; resources: Resource[]; holidays: Holiday[] }  // what a workbook holds; computePlan(plan) = compute() with a calendar from Holidays
+export interface Plan { project: Project; tasks: Task[]; resources: Resource[]; holidays: Holiday[] }  // what a workbook holds; computePlan(plan) = compute() with planCalendar(plan): Working Days and Holidays
 
 export type Status = 'Not Started' | 'In Progress' | 'Late' | 'Completed';
 
@@ -1020,7 +1044,7 @@ export interface ComputeResult {
 ## 12. Testing
 - **Vitest** for the engine and Excel layer. Engine coverage ≥ 90 %.
 - **Engine cases (minimum):**
-  - Calendar: weekends are working days, holidays (also on weekends), `addWorkdays` positive/negative/zero from a holiday, `countWorkdays` across holidays, `workdayDiff` signs.
+  - Calendar: weekends are working days by default, holidays (also on weekends), `addWorkdays` positive/negative/zero from a holiday, `countWorkdays` across holidays, `workdayDiff` signs; with working days set (Mon–Fri, Mon–Sat, one day a week): the same functions across weeks, holidays on worked and unworked weekdays.
   - Links: every notation example in §5.2, canonical output, each error type.
   - Schedule: FS, SS, lag, lead, multiple predecessors (max wins), milestone gaps (into a milestone, after a milestone that follows a task, after a start milestone and a chain of them), blank duration derived from finish, duration wins over finish, root task snapping, Track-mode freeze vs Plan-mode recompute.
   - Cycles: detection and graceful continuation.
@@ -1030,7 +1054,7 @@ export interface ComputeResult {
   - Progress: milestones excluded, all-milestones project, by-assignee with shared tasks, Unassigned group, this-week deltas.
   - S-curve: planned reaches 100 at project PF; actual(SD) = mean progress; forecast joins actual at SD and reaches 100 at forecast finish.
   - Critical path (M5): simple chain, parallel branches with float.
-- **Excel round-trip (Node, exceljs):** read sample → write → read: data equal; header fills, column widths, freeze panes, data validation and an extra user column/sheet unchanged. Messy fixture: all issues reported, unparseable text preserved.
+- **Excel round-trip (Node, exceljs):** read sample → write → read: data equal; header fills, column widths, freeze panes, data validation and an extra user column/sheet unchanged. Messy fixture: all issues reported, unparseable text preserved. Working Days: every accepted form, unreadable text kept, the field appended to an older file. Holidays and Resources edited in the app: only changed cells written, rows never moved, unreadable rows and sheets without their header left alone, a second save writes nothing new.
 - **Manual QA:** §15 before closing each milestone that touches UI.
 
 ---
@@ -1091,6 +1115,8 @@ export interface ComputeResult {
 - [ ] Undo/redo across 10 mixed actions.
 - [ ] Major tasks: Group a few tasks, Indent / Outdent, collapse and expand; dates and % roll up; drag a row into another group and to another Level; Save and open in Excel: bold major tasks, indented names, +/− collapses each group.
 - [ ] Day zoom: Saturdays and Sundays marked in the timeline and the chart.
+- [ ] Settings › Calendar: untick Sunday, add a holiday range, Apply → Sundays and the holidays grey, durations skip them, "Plan recalculated" toast; Undo restores; Save and open in Excel: Project › Working Days, new Holidays rows, other rows untouched.
+- [ ] Settings › Resources: rename a contractor (tasks follow), change its color (Gantt by assignee follows), add one, remove an unused one; Save and open in Excel: the rows changed in place.
 - [ ] Report prints to PDF cleanly.
 - [ ] Print Gantt: in Plan mode with Color by assignee and the critical path on, a collapsed group and a hidden column, the PDF shows the same colours, rings, red arrows, rows and columns; A3 fits more rows; Track mode prints its bars and status date.
 - [ ] DevTools Network shows zero requests.
@@ -1099,7 +1125,7 @@ export interface ComputeResult {
 ---
 
 ## 16. Future ideas (out of scope for v1)
-Links to and from major tasks · WBS codes · FF/SF links · a per-project working-week setting (e.g. Mon–Fri) · weighting by manhours · dark mode · multiple baselines · SharePoint/Microsoft Graph for multi-user · export report to PowerPoint · import MS Project XML · resource capacity and over-allocation warnings · hatched "slip" on the part of a late bar past its planned finish (also in Color by assignee and in print).
+Links to and from major tasks · WBS codes · FF/SF links · weighting by manhours · dark mode · multiple baselines · SharePoint/Microsoft Graph for multi-user · export report to PowerPoint · import MS Project XML · resource capacity and over-allocation warnings · hatched "slip" on the part of a late bar past its planned finish (also in Color by assignee and in print).
 
 ---
 
@@ -1332,3 +1358,11 @@ Claude Code appends decisions made during the build (date · decision · reason)
 - 2026-11-04 · The app is also published on GitHub Pages from `main`, after the type check and the tests pass · The owner wants to open it from the web without copying the file; it is the same single file with no network requests (§3.1), so a plan never leaves the user's computer.
 - 2026-11-04 · The public repository's history starts again from one clean commit · The earlier commit held the real names, and a public repository shows its whole history.
 - 2026-11-04 · The engine timing test (100 tasks, median of 15 recomputes) allows 50 ms when `CI` is set, 10 ms otherwise · GitHub's shared runner, measuring coverage, took 17 ms where the planner's PC takes a few; on CI the test only has to catch a gross slowdown.
+- 2026-11-20 · Working days of the week per project (owner request): Project › `Working Days`, blank = every day; read in English or Thai, with ranges; unreadable text gives `W_BAD_WORKING_DAYS`, counts as every day and is written back as typed · Some projects don't work Sundays. One field in the Project sheet keeps the schema small and readable in Excel, and a file from before it opens and calculates exactly as before.
+- 2026-11-20 · A file without Working Days records no Change; Save appends the field (all seven days) like Last Saved · A Change would open every older file as "Unsaved changes" with nothing for the user to check.
+- 2026-11-20 · Weekdays the project doesn't work are drawn as non-working days (the holiday grey, tooltip "Non-working day"); the weekend tint stays only on a Saturday or Sunday that is worked · They are non-working days like holidays (MS Project greys them the same way); the tint was there because weekends are worked.
+- 2026-11-20 · Settings dialog with General, Calendar and Resources tabs, opened from More › Project settings…, Calendar…, Resources…; one Apply for every tab = one undo step · The owner suggested More; one settings place with a single Apply is simpler than three dialogs, and a calendar change is one thing to undo.
+- 2026-11-20 · Holidays and Resources edited in the app are saved in place: Save never moves or deletes a row of these sheets; a deleted entry's own cells are emptied and new entries fill blank rows first · The user's own columns, formulas and side notes on those sheets stay beside the entries they belong to (ExcelJS can't move rows the way Excel does, adjusting formulas). So the app doesn't reorder resources: the Resources sheet's order is the list's order, and is changed in Excel.
+- 2026-11-20 · Renaming a resource renames it on every task; only a resource no task uses can be removed · A name kept on tasks would come back as a new resource on the next save; removing a used name would leave assignees without a resource.
+- 2026-11-20 · A resource without its own color keeps the color it shows when a resource above it is removed (the color is written to its Color cell) · The palette goes by position, so removing one resource would recolor every one below it in the Gantt and the report.
+- 2026-11-20 · Holidays and resources are read-only in Settings when their sheet has content but no Date / Name header · Save leaves such a sheet alone (§4.4, §4.5), so edits there would vanish at the next open.

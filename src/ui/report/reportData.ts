@@ -1,6 +1,6 @@
 // What the report shows (SPEC §9.3), derived from the computed plan. Pure functions.
 import { HEATMAP_DAILY_MAX_SPAN, HEATMAP_DAYS, HEATMAP_WEEKS, type ReportOptions } from '../../config';
-import { createCalendar } from '../../engine/calendar';
+import { planCalendar } from '../../engine/compute';
 import { addDays, dayOfWeek, toDayNumber } from '../../engine/dates';
 import type { AssigneeSummary, ComputeResult, ISODate, Plan, SCurvePoint } from '../../engine/types';
 import type { Row } from '../../store/selectors';
@@ -120,7 +120,7 @@ export function workload(rows: readonly Row[], names: readonly string[], plan: P
     open.filter((row) => assignedTo(row, name) && row.r.forecastStart <= to && row.r.forecastFinish >= from).length;
 
   if (daily) {
-    const isWorkday = createCalendar(plan.holidays.map((h) => h.date)).isWorkday;
+    const isWorkday = planCalendar(plan).isWorkday;
     const columns = Array.from({ length: clamp(toDayNumber(forecastFinish) - toDayNumber(sd), HEATMAP_DAYS) }, (_, i) => addDays(sd, i + 1));
     const holiday = columns.map((d) => !isWorkday(d));
     return { unit: 'day', columns, holiday, counts: names.map((name) => columns.map((d, j) => (holiday[j] ? 0 : count(name, d, d)))) };

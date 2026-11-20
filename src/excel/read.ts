@@ -35,7 +35,7 @@ export function readPlan(wb: Workbook, today: ISODate, filteredSheets: readonly 
     issues.push(makeIssue('W_NO_TASKS_SHEET', { sheets: sheets.length > 0 ? sheets.join(', ') : 'no sheets' }));
   }
   const { tasks, layout } = readTasks(tasksSheet, date1904, issues, changes);
-  const project = readProject(findSheet(wb, SHEETS.project), tasks, today, date1904, changes);
+  const project = readProject(findSheet(wb, SHEETS.project), tasks, today, date1904, changes, issues);
   const resources = readResources(findSheet(wb, SHEETS.resources), issues);
   const holidays = readHolidays(findSheet(wb, SHEETS.holidays), date1904, issues);
   const converted = convertedOnSave(wb, tasksSheet, filteredSheets, layout, issues);

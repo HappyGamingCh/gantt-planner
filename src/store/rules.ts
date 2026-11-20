@@ -1,7 +1,7 @@
 // Field rules of a task edit (SPEC §6, §8): what a typed value becomes, what it fills in, and why it is refused.
 // Pure (no store), so the grid, the drawer and the store say the same words.
 import { MAX_DAYS } from '../config';
-import { createCalendar } from '../engine/calendar';
+import { planCalendar } from '../engine/compute';
 import { isPlanDate } from '../engine/dates';
 import type { ISODate, Plan, Project, Task, TaskResult } from '../engine/types';
 import { cleanName } from '../excel/cells';
@@ -76,7 +76,7 @@ export function editRules(task: Task, r: TaskResult | undefined, field: EditFiel
       if (!date || !r) return {};
       // §8: a finish before the start is refused (only Duration 0 makes a milestone); otherwise it sets the duration.
       if (date < r.plannedStart) return { message: `Finish can't be before the start (${formatDayMonth(r.plannedStart)}) — set Duration to 0 for a milestone` };
-      const days = createCalendar(plan.holidays.map((h) => h.date)).countWorkdays(r.plannedStart, date);
+      const days = planCalendar(plan).countWorkdays(r.plannedStart, date);
       return days <= MAX_DAYS ? { patch: { plannedDuration: days } } : { message: DURATION_MESSAGE };
     }
     case 'progress':

@@ -155,7 +155,7 @@ export function headerColumns(ws: Worksheet, headers: readonly string[]): Map<st
   return result;
 }
 
-export const PROJECT_FIELDS = ['Project Name', 'Owner', 'Project Start', 'Status Date', 'Mode', 'Last Saved', 'App Version'] as const;
+export const PROJECT_FIELDS = ['Project Name', 'Owner', 'Project Start', 'Status Date', 'Mode', 'Working Days', 'Last Saved', 'App Version'] as const;
 export type ProjectField = (typeof PROJECT_FIELDS)[number];
 export const RESOURCE_HEADERS = ['Name', 'Type', 'Color'] as const;
 export const HOLIDAY_HEADERS = ['Date', 'Description'] as const;
@@ -165,12 +165,25 @@ export const HOLIDAY_HEADERS = ['Date', 'Description'] as const;
  * (W_RESOURCES_NO_HEADER) and Save leaves the sheet as it is, so new rows never mix into the user's columns (§4.4).
  */
 export function resourcesWithoutName(ws: Worksheet): boolean {
-  if (headerColumns(ws, RESOURCE_HEADERS).has('Name')) return false;
+  return withoutHeader(ws, RESOURCE_HEADERS);
+}
+
+/**
+ * A Holidays sheet with content but no `Date` header in row 1 (a renamed header, a title row above it): Save leaves
+ * it as it is, and its holidays can't be edited in the app (§4.5).
+ */
+export function holidaysWithoutDate(ws: Worksheet): boolean {
+  return withoutHeader(ws, HOLIDAY_HEADERS);
+}
+
+/** No first header (`Name`, `Date`) in row 1, while the sheet holds something other than these headers. */
+function withoutHeader(ws: Worksheet, headers: readonly string[]): boolean {
+  if (headerColumns(ws, headers).has(headers[0]!)) return false;
   let data = false;
   ws.eachRow((row, n) =>
     row.eachCell((cell) => {
       const text = cellText(cell.value).trim();
-      if (text !== '' && (n > 1 || !RESOURCE_HEADERS.some((h) => headerKey(h) === headerKey(text)))) data = true;
+      if (text !== '' && (n > 1 || !headers.some((h) => headerKey(h) === headerKey(text)))) data = true;
     }),
   );
   return data;

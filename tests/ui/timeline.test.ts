@@ -6,7 +6,7 @@ import { SAMPLE_STATUS_DATE, sampleData, sampleHolidays } from '../../src/sample
 import { rowsOf } from '../../src/store/selectors';
 import { MarkLabel, TrackMark } from '../../src/ui/gantt/bars';
 import { CORNER_RESERVE } from '../../src/ui/gantt/GanttCorner';
-import { chipWidth, fillScale, fittedScale, gridColumns, layoutChips, makeScale, monthLabelOffset, monthSegments, showsHolidays, showsWeekends, weekendDays } from '../../src/ui/gantt/scale';
+import { chipWidth, daysOff, fillScale, fittedScale, gridColumns, layoutChips, makeScale, monthLabelOffset, monthSegments, showsHolidays, showsWeekends, weekendDays } from '../../src/ui/gantt/scale';
 import { Timeline } from '../../src/ui/gantt/Timeline';
 import { quarterIn } from '../../src/ui/main/scroll';
 
@@ -45,6 +45,30 @@ describe('weekends — SPEC §7.8', () => {
     expect(count(html, 'tl-day tl-day-off')).toBe(1);
     const week = renderToStaticMarkup(createElement(Timeline, { scale: makeScale(START, END, 'week', 1000), width: 900, holidays: [] }));
     expect(week).not.toContain('tl-weekend'); // week labels, no day numbers
+  });
+});
+
+describe('weekdays the project doesn’t work — SPEC §2, §7.8', () => {
+  const MON_SAT = [1, 2, 3, 4, 5, 6];
+
+  it('are non-working days with the holidays, in date order; a holiday on one keeps its description', () => {
+    // Fri 25 Sep → Sun 4 Oct 2026, Mon–Sat: Sundays 27 Sep and 4 Oct
+    expect(daysOff(START, 10, [{ date: '2026-10-04', description: 'Unit day' }, { date: '2026-09-30', description: '' }, { date: '2026-12-01', description: 'later' }], MON_SAT)).toEqual([
+      { date: '2026-09-27', description: 'Non-working day' },
+      { date: '2026-09-30', description: '' },
+      { date: '2026-10-04', description: 'Unit day' },
+    ]);
+    expect(daysOff(START, 10, [{ date: '2026-09-30', description: 'x' }])).toEqual([{ date: '2026-09-30', description: 'x' }]); // every day worked
+  });
+
+  it('only a worked Saturday or Sunday gets the weekend mark', () => {
+    expect(weekendDays(makeScale(START, END, 'day', 1000), MON_SAT)).toEqual([1, 8, 15, 22]); // the Saturdays
+    expect(weekendDays(makeScale(START, END, 'day', 1000), [1, 2, 3, 4, 5])).toEqual([]);
+    const scale = makeScale(START, END, 'day', 1000);
+    const html = renderToStaticMarkup(createElement(Timeline, { scale, width: 900, holidays: daysOff(START, scale.days, [], MON_SAT), workingDays: MON_SAT }));
+    expect(count(html, 'class="tl-weekend"')).toBe(4);
+    expect(count(html, 'tl-day tl-day-off')).toBe(4); // the Sundays, greyed like holidays
+    expect(html).toContain('<title>Non-working day</title>');
   });
 });
 

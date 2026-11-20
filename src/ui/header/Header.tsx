@@ -1,11 +1,12 @@
 // Header (SPEC §7.4): name (click to rename) and file chip, Plan | Track, status date, issues badge, Open, Save, Report,
 // Print Gantt, More.
-import { Activity, FileDown, FilePlus, Info, Keyboard, ListOrdered, Lock, MoreHorizontal, PencilLine, PencilRuler, Printer, SaveAll, Settings } from 'lucide-react';
+import { Activity, CalendarDays, FileDown, FilePlus, Info, Keyboard, ListOrdered, Lock, MoreHorizontal, PencilLine, PencilRuler, Printer, SaveAll, Settings, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { isPlanDate, PLAN_DATE_MAX, PLAN_DATE_MIN } from '../../engine/dates';
 import { askRenumber, DATE_RANGE_MESSAGE, setMode, setStatusDate, updateProject } from '../../store/edit';
 import { askNewPlan, downloadTemplate, openPicked, save, saveAs } from '../../store/files';
 import { changesUnsaved } from '../../store/selectors';
+import { openSettings } from '../../store/settings';
 import { openIssues, openPrint, openReport, showToast, todayISO, useStore, type State } from '../../store/store';
 import { AppMark } from '../common/AppMark';
 import { formatDayMonth, formatTime } from '../common/format';
@@ -80,7 +81,9 @@ export function Header() {
             { label: 'Save as…', icon: <SaveAll size={16} />, shortcut: 'Ctrl+Shift+S', onSelect: () => void saveAs() },
             { label: 'Download blank template', icon: <FileDown size={16} />, onSelect: () => void downloadTemplate() },
             'separator',
-            { label: 'Project settings…', icon: <Settings size={16} />, onSelect: () => setDialog({ kind: 'projectSettings' }) },
+            { label: 'Project settings…', icon: <Settings size={16} />, onSelect: () => openSettings('general') },
+            { label: 'Calendar…', icon: <CalendarDays size={16} />, onSelect: () => openSettings('calendar') },
+            { label: 'Resources…', icon: <Users size={16} />, onSelect: () => openSettings('resources') },
             ...(project.mode === 'Plan' ? [{ label: 'Renumber IDs…', icon: <ListOrdered size={16} />, onSelect: askRenumber }] : []),
             'separator',
             { label: 'Keyboard shortcuts', icon: <Keyboard size={16} />, shortcut: '?', onSelect: () => setDialog({ kind: 'shortcuts' }) },

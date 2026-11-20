@@ -16,6 +16,7 @@ export function Timeline({
   scale,
   width,
   holidays,
+  workingDays,
   statusDate,
   today,
   rightInset = 0,
@@ -23,7 +24,10 @@ export function Timeline({
 }: {
   scale: GanttScale;
   width: number;
+  /** The non-working days drawn (daysOff): holidays and weekdays the project doesn't work. */
   holidays: Holiday[];
+  /** The project's working weekdays (§4.2): only a worked Saturday or Sunday gets the weekend mark. */
+  workingDays?: readonly number[];
   statusDate?: ISODate;
   today?: ISODate;
   /** Px at the right end the chips keep clear of (the Gantt corner over it). */
@@ -37,7 +41,7 @@ export function Timeline({
   const shaded = showsHolidays(scale) ? holidays : [];
   const daysOff = new Set(shaded.map((h) => toDayNumber(h.date) - toDayNumber(scale.start)));
   // §7.8 Weekends: with day numbers, Saturday and Sunday cells are marked (a holiday's grey wins).
-  const weekend = new Set(detail === 'day' ? weekendDays(scale) : []);
+  const weekend = new Set(detail === 'day' ? weekendDays(scale, workingDays) : []);
   // The same x as the chart's lines: the status date at the end of its day, today in the middle of its day.
   const status = statusDate ? { x: scale.x(statusDate) + px, text: `Status · ${formatDayMonth(statusDate)}` } : undefined;
   const now = today ? { x: scale.x(today) + px / 2, text: 'Today' } : undefined;

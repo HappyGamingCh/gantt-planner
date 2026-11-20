@@ -12,9 +12,14 @@ import { buildSCurve, plannedPct } from './scurve';
 import { taskStatus, taskVariance } from './status';
 import type { Change, ComputeResult, Issue, Plan, Project, Resource, Task, TaskCalc, TaskResult } from './types';
 
-/** compute() for a whole plan, with the calendar built from its Holidays. */
+/** The plan's calendar (§5.1): its working days of the week, less its holidays. */
+export function planCalendar(plan: Pick<Plan, 'project' | 'holidays'>): Calendar {
+  return createCalendar(plan.holidays.map((h) => h.date), plan.project.workingDays);
+}
+
+/** compute() for a whole plan, with its calendar (planCalendar). */
 export function computePlan(plan: Plan): ComputeResult {
-  return compute(plan.project, plan.tasks, createCalendar(plan.holidays.map((h) => h.date)), plan.resources);
+  return compute(plan.project, plan.tasks, planCalendar(plan), plan.resources);
 }
 
 export function compute(

@@ -1,17 +1,17 @@
-// Dialogs (SPEC §3.5, §6, §7.10, §7.11, §8): file conflicts and errors, unsaved changes, the Plan-mode confirm,
-// New plan, project settings, the confirmations of delete and renumber, and help.
+// Dialogs (SPEC §3.5, §6, §7.10, §7.11, §7.14, §8): file conflicts and errors, unsaved changes, the Plan-mode
+// confirm, New plan, Settings, the confirmations of delete and renumber, and help.
 import { confirmPlanMode, deleteTasks, renumber } from '../../store/edit';
 import { discardChanges, downloadMyData, reload, save, saveAnyway, saveAs } from '../../store/files';
 import { closeDialog, useStore } from '../../store/store';
 import { NewPlanDialog } from '../empty/NewPlanDialog';
-import { ProjectSettingsDialog } from '../header/ProjectSettingsDialog';
+import { SettingsDialog } from '../settings/SettingsDialog';
 import { Dialog } from './Dialog';
 import { AboutDialog, ShortcutsDialog } from './HelpDialogs';
 
 export function Dialogs() {
   const dialog = useStore((s) => s.dialog);
   const name = useStore((s) => s.file?.name ?? 'this file');
-  const project = useStore((s) => s.plan?.project);
+  const plan = useStore((s) => s.plan);
   const taskCount = useStore((s) => s.plan?.tasks.length ?? 0);
   if (!dialog) return null;
   const cancel = { label: 'Cancel', onClick: closeDialog };
@@ -112,7 +112,7 @@ export function Dialogs() {
     case 'newPlan':
       return <NewPlanDialog />;
     case 'projectSettings':
-      return project ? <ProjectSettingsDialog project={project} /> : null;
+      return plan ? <SettingsDialog plan={plan} tab={dialog.tab} /> : null;
     case 'delete': {
       const what = dialog.ids.length === 1 ? 'this task' : 'the selected tasks';
       const who = dialog.dependents === 1 ? '1 task depends' : `${dialog.dependents} tasks depend`;

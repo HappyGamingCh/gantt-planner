@@ -4,7 +4,7 @@
 import { ArrowLeft, Printer, SlidersHorizontal } from 'lucide-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Paper } from '../../config';
-import { createCalendar } from '../../engine/calendar';
+import { planCalendar } from '../../engine/compute';
 import type { ComputeResult, Plan } from '../../engine/types';
 import { assigneeInfo, isFiltering, rowsOf, shownRows } from '../../store/selectors';
 import { closeView, setPrintPaper, useStore } from '../../store/store';
@@ -13,7 +13,7 @@ import { Popover } from '../common/Popover';
 import { Segmented } from '../common/Segmented';
 import { useFontsReady } from '../common/useFontsReady';
 import { rowDates } from '../gantt/Gantt';
-import { fittedScale, ganttRange, showsHolidays } from '../gantt/scale';
+import { daysOff, fittedScale, ganttRange, showsHolidays } from '../gantt/scale';
 import { Page, PrintChrome } from '../report/ReportPage';
 import { legendAssignees, paginate, PAPER, printColumns, rowsPerPage } from './printLayout';
 import { PrintLegend, type LegendProps } from './PrintLegend';
@@ -55,14 +55,14 @@ function PrintView({ plan, result, fileName }: { plan: Plan; result: ComputeResu
   const all = useMemo(() => rowsOf(plan, result), [plan, result]);
   const rows = useMemo(() => shownRows(all, filters, pinned, collapsed), [all, filters, pinned, collapsed]);
   const info = useMemo(() => assigneeInfo(plan), [plan]);
-  const calendar = useMemo(() => createCalendar(plan.holidays.map((h) => h.date)), [plan.holidays]);
+  const calendar = useMemo(() => planCalendar(plan), [plan]);
   const { columns, left, width: tableWidth } = printColumns(shown, mode, paper);
   const chartWidth = PAPER[paper].width - tableWidth;
   // The printed rows' range (§7.8); Plan mode draws planned bars only and no status date, so neither counts there.
   const dates = mode === 'Plan' ? rows.flatMap(({ r }) => [r.plannedStart, r.plannedFinish]) : rowDates(rows);
   const range = ganttRange(dates, mode === 'Plan' && dates.length > 0 ? dates[0]! : project.statusDate, calendar);
   const scale = fittedScale(range.start, range.end, chartWidth, LABEL_ROOM[mode]);
-  const holidays = showsHolidays(scale) ? plan.holidays.filter((h) => h.date >= range.start && h.date <= range.end) : [];
+  const holidays = showsHolidays(scale) ? daysOff(range.start, scale.days, plan.holidays, project.workingDays) : [];
   const printed = new Set(rows.map((row) => row.task.id));
   const legend: LegendProps = {
     mode,
@@ -148,6 +148,7 @@ function PrintView({ plan, result, fileName }: { plan: Plan; result: ComputeResu
                 chartWidth={chartWidth}
                 scale={scale}
                 holidays={holidays}
+                workingDays={project.workingDays}
                 statusDate={project.statusDate}
                 colorBy={colorBy}
                 critical={critical}

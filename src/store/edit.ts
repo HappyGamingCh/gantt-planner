@@ -1,6 +1,6 @@
 // Plan edits (SPEC §6, §8). Each exported action is one undo step (undo.ts) and recomputes the plan. The rules of
 // a single field edit are in rules.ts; Plan ↔ Track in mode.ts.
-import { createCalendar } from '../engine/calendar';
+import { planCalendar } from '../engine/compute';
 import { isPlanDate } from '../engine/dates';
 import type { ComputeResult, ISODate, Plan, Project, QuickFix, Task } from '../engine/types';
 import { cleanName } from '../excel/cells';
@@ -60,7 +60,7 @@ export function addTask(): void {
   const id = Math.max(maxIdEver, ...plan.tasks.map((t) => t.id)) + 1;
   const base = (found < 0 ? undefined : result.tasks.find((r) => r.id === after)?.plannedStart) ?? plan.project.projectStart;
   // §8 Track mode: new work starts no earlier than the first day after the status date (R, §5.6), else it is Late at once.
-  const earliest = createCalendar(plan.holidays.map((h) => h.date)).nextWorkday(plan.project.statusDate);
+  const earliest = planCalendar(plan).nextWorkday(plan.project.statusDate);
   const plannedStart = plan.project.mode === 'Track' && base < earliest ? earliest : base;
   const task: Task = { id, name: 'New task', assigned: [], predecessorsText: '', plannedStart, plannedDuration: 1, progress: 0, remarks: '', extra: {} };
   if (plan.project.mode === 'Track') task.isNewThisSession = true;
@@ -246,8 +246,8 @@ export function rootsOnProjectStart(plan: Plan, result: ComputeResult): Task[] {
 }
 
 /**
- * Project settings and the header (§7.4). In Plan mode, `moveRoots` also moves the root tasks on the old Project
- * Start to the new one (§8), in the same undo step.
+ * The project name typed in the header (§7.4); the Settings dialog applies its fields with applySettings (§7.14). In
+ * Plan mode, `moveRoots` also moves the root tasks on the old Project Start to the new one (§8), in the same undo step.
  */
 export function updateProject(fields: Partial<Pick<Project, 'name' | 'owner' | 'projectStart'>>, moveRoots = false): void {
   const { plan, result } = get();

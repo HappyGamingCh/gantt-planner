@@ -20,7 +20,9 @@ describe('reading the sample workbook', () => {
     expect(r.plan.tasks.map((t) => [t.plannedStart, t.plannedFinish])).toEqual(
       computePlan(sampleData).tasks.map((t) => [t.plannedStart, t.plannedFinish]),
     );
-    expect(r.plan.resources).toEqual(sampleData.resources.map((res, i) => ({ ...res, color: RESOURCE_PALETTE[i] })));
+    expect(r.plan.resources).toEqual(
+      sampleData.resources.map((res, i) => ({ ...res, color: RESOURCE_PALETTE[i], source: { row: i + 2, key: res.name.toLowerCase() } })),
+    );
     expect(r.plan.holidays).toEqual(sampleData.holidays);
     expect(r.issues).toEqual([]);
     expect(r.changes).toEqual([]);
@@ -180,7 +182,11 @@ describe('Resources and Holidays — SPEC §4.4, §4.5', () => {
     const wb = createTemplate();
     const ws = findSheet(wb, 'Resources')!;
     for (const row of [['Somchai  K.', 'person', '#2563eb'], ['ACME', 'Vendor', 'blue'], ['somchai k.', 'Team', ''], [null, 'Team', '#000000']]) ws.addRow(row);
-    expect(read(wb).plan.resources).toEqual([{ name: 'Somchai K.', type: 'Person', color: '#2563EB' }, { name: 'ACME' }]);
+    // source: the row each was read from, and its name as read (the writer keeps the resource in that row, §4.8)
+    expect(read(wb).plan.resources).toEqual([
+      { name: 'Somchai K.', type: 'Person', color: '#2563EB', source: { row: 2, key: 'somchai k.' } },
+      { name: 'ACME', source: { row: 3, key: 'acme' } },
+    ]);
   });
 
   it('holidays: dates in any accepted form; a bad one is reported and ignored', () => {

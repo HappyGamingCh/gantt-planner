@@ -1,6 +1,6 @@
 // Plan ↔ Track (SPEC §6): one undo step, saved to Project › Mode. Track freezes the baseline; dates that move when
 // the plan is recalculated are listed in Changes (§7.11).
-import type { Change, ISODate, Project } from '../engine/types';
+import type { Change, ISODate, Project, TaskResult } from '../engine/types';
 import { openIssues, showToast, useStore } from './store';
 import { commit } from './undo';
 
@@ -35,7 +35,14 @@ function applyMode(mode: Project['mode']) {
         })
       : plan.tasks;
   commit((p) => ({ ...p, tasks, project: { ...p.project, mode } }));
+  reportMoved(before);
+}
 
+/**
+ * After a recalculation (a switch to Plan mode, a calendar change): planned dates that moved from `before` go to the
+ * Changes list, and a toast says how many tasks moved, with Review (§6, §7.11, §7.14).
+ */
+export function reportMoved(before: ReadonlyMap<number, TaskResult>): void {
   const moved: Change[] = [];
   for (const r of get().result?.tasks ?? []) {
     const b = before.get(r.id);

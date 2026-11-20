@@ -1,12 +1,12 @@
 // Report pages 4+ (SPEC §9.3): the Track-mode Gantt fitted to the page width, the timeline header repeated on
 // every page. Rows are 26 px (not 28) so a 25-task plan fits one A4 landscape page. Major tasks are rows of their own
 // (bold, indented by Level, with their bar), all expanded.
-import { createCalendar } from '../../engine/calendar';
+import { planCalendar } from '../../engine/compute';
 import type { Plan } from '../../engine/types';
 import type { Row } from '../../store/selectors';
 import { MarkLabel, SummaryMark, TrackMark } from '../gantt/bars';
 import { rowDates } from '../gantt/Gantt';
-import { fittedScale, ganttRange, gridColumns, showsHolidays, showsWeekends, weekendDays } from '../gantt/scale';
+import { daysOff, fittedScale, ganttRange, gridColumns, showsHolidays, showsWeekends, weekendDays } from '../gantt/scale';
 import { Timeline } from '../gantt/Timeline';
 import { TIMELINE_HEIGHT } from '../../config';
 import { APPENDIX_LEGEND_HEIGHT, AppendixLegend } from './AppendixLegend';
@@ -28,14 +28,14 @@ const PER_PAGE = Math.floor((718 - (TIMELINE_HEIGHT + 1) - APPENDIX_LEGEND_HEIGH
 export function GanttAppendix({ plan, rows, band }: { plan: Plan; rows: Row[]; band: Band }) {
   if (rows.length === 0) return null;
   const sd = plan.project.statusDate;
-  const range = ganttRange(rowDates(rows), sd, createCalendar(plan.holidays.map((h) => h.date)));
+  const range = ganttRange(rowDates(rows), sd, planCalendar(plan));
   const scale = fittedScale(range.start, range.end, CHART, TRACK_LABEL_ROOM);
-  const holidays = showsHolidays(scale) ? plan.holidays.filter((h) => h.date >= range.start && h.date <= range.end) : [];
+  const holidays = showsHolidays(scale) ? daysOff(range.start, scale.days, plan.holidays, plan.project.workingDays) : [];
   const pages = Array.from({ length: Math.ceil(rows.length / PER_PAGE) }, (_, i) => rows.slice(i * PER_PAGE, (i + 1) * PER_PAGE));
   const sdX = scale.x(sd) + scale.px;
   const { weeks, days } = gridColumns(scale);
   const vlines = (list: number[], height: number) => list.map((i) => `M${i * scale.px + 0.5},0V${height}`).join('');
-  const weekends = showsWeekends(scale) ? weekendDays(scale) : [];
+  const weekends = showsWeekends(scale) ? weekendDays(scale, plan.project.workingDays) : [];
   return (
     <>
       {pages.map((chunk, p) => (
@@ -56,7 +56,7 @@ export function GanttAppendix({ plan, rows, band }: { plan: Plan; rows: Row[]; b
               ))}
             </div>
             <div className="appendix-chart">
-              <Timeline scale={scale} width={CHART} holidays={holidays} statusDate={sd} />
+              <Timeline scale={scale} width={CHART} holidays={holidays} workingDays={plan.project.workingDays} statusDate={sd} />
               <svg className="gantt-chart gantt-track" width={CHART} height={chunk.length * ROW} aria-hidden="true">
                 <g className="weekends">
                   {weekends.map((d) => (

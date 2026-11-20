@@ -32,7 +32,7 @@ export type Dialog =
   | { kind: 'newPlan' }
   | { kind: 'delete'; ids: number[]; dependents: number; group?: { name: string; tasks: number } } // group: one major task (§8)
   | { kind: 'renumber' }
-  | { kind: 'projectSettings' }
+  | { kind: 'projectSettings'; tab?: 'general' | 'calendar' | 'resources' } // the Settings dialog (§7.14)
   | { kind: 'shortcuts' }
   | { kind: 'about' }
   | { kind: 'error'; title: string; message: string; action?: { label: string; run: () => void } };

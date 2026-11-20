@@ -36,12 +36,18 @@ export interface Project {
   projectStart: ISODate;
   statusDate: ISODate;
   mode: 'Plan' | 'Track';
+  /** Working weekdays (§4.2), 0 = Sunday … 6 = Saturday, ascending; undefined = every day of the week. */
+  workingDays?: number[];
+  /** The Working Days cell's text as read: Save writes it back until the user sets the working days in the app (§4.8). */
+  workingDaysText?: string;
 }
 
 export interface Resource {
   name: string;
   type?: 'Person' | 'Team' | 'Contractor';
   color?: string;
+  /** The Resources row it was read from; opaque outside the Excel layer, whose writer keeps the resource in it (§4.8). */
+  source?: unknown;
 }
 
 export interface Holiday {
@@ -122,6 +128,7 @@ export type IssueCode =
   | 'E_NO_TASK_HEADER'
   | 'W_COLUMNS_NOT_FOUND'
   | 'W_HOLIDAYS_NO_HEADER'
+  | 'W_BAD_WORKING_DAYS'
   | 'W_RESOURCES_NO_HEADER'
   | 'W_DATE_TOO_LARGE'
   | 'E_SUMMARY_LINK'

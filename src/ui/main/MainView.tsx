@@ -2,7 +2,7 @@
 // scroll. A splitter sets the grid width. The drawer and the Issues panel slide over the Gantt side.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type RefObject } from 'react';
 import { GRID_WIDTH, ROW_HEIGHTS, TIMELINE_HEIGHT } from '../../config';
-import { createCalendar } from '../../engine/calendar';
+import { planCalendar } from '../../engine/compute';
 import type { ComputeResult, Plan } from '../../engine/types';
 import { assigneeInfo, assigneeNames, rowsOf, shownRows } from '../../store/selectors';
 import { setGridWidth, todayISO, useStore } from '../../store/store';
@@ -79,7 +79,7 @@ function Workspace({ plan, result }: { plan: Plan; result: ComputeResult }) {
   const rows = useMemo(() => shownRows(all, filters, pinned, collapsed), [all, filters, pinned, collapsed]);
   const info = useMemo(() => assigneeInfo(plan), [plan]);
   const suggestions = useMemo(() => assigneeNames(plan), [plan]);
-  const calendar = useMemo(() => createCalendar(plan.holidays.map((h) => h.date)), [plan.holidays]);
+  const calendar = useMemo(() => planCalendar({ project, holidays: plan.holidays }), [project, plan.holidays]);
   const range = useMemo(() => ganttRange(rowDates(all), project.statusDate, calendar), [all, project.statusDate, calendar]);
   const scale = useMemo(() => makeScale(range.start, range.end, zoom, Math.max(200, ganttWidth - LABEL_ROOM)), [range, zoom, ganttWidth]);
 
@@ -157,6 +157,7 @@ function Workspace({ plan, result }: { plan: Plan; result: ComputeResult }) {
           statusDate={project.statusDate}
           today={todayISO()}
           holidays={plan.holidays}
+          workingDays={project.workingDays}
           selection={selection}
           info={info}
           colorBy={colorBy}

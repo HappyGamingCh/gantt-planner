@@ -318,3 +318,21 @@ Full code audit after M5: 14 area finders (engine, Excel read/write, store, file
 - [x] CLAUDE.md: rule 8 (made-up names only) and the GitHub Pages note
 - [x] Owner's choice: a new public repository with one clean commit (the old one renamed to a private backup); GitHub Pages switched on in Actions mode: https://happygamingch.github.io/gantt-planner/
 - [x] The first Pages run stopped at the engine timing test (17 ms on the shared runner with coverage, limit 10 ms): with `CI` set the limit is 50 ms (SPEC §17); the second run passed and deployed
+
+## Settings: working days, holidays and resources in the app · done 2026-11-20 (owner request)
+
+### Acceptance
+- [x] **Settings dialog** (More › Project settings…, Calendar…, Resources…): tabs General, Calendar, Resources; one Apply for every tab = one undo step; Cancel / Esc drop every edit (SPEC §7.14)
+- [x] **Working days**: Mon … Sun checkboxes (at least one); saved as Project › `Working Days`; read in English or Thai with ranges; unreadable text → `W_BAD_WORKING_DAYS`, every day counts, text written back; a file without the field opens unchanged and gets it on save (SPEC §4.2, §4.7, §4.8)
+- [x] Engine: `isWorkday` uses the working days; `countWorkdays`, `addWorkdays`, `workdayDiff`, `snapForward`, `nextWorkday` across weeks with holidays on worked and unworked weekdays (SPEC §5.1); every calendar in the app comes from `planCalendar(plan)`
+- [x] Gantt, Print Gantt and the report's appendix grey the weekdays not worked like holidays ("Non-working day"); the weekend tint only on worked weekends; the report's heatmap hatches them (SPEC §7.8, §9.3)
+- [x] **Holidays** in Settings › Calendar: add a date or a range with a description, edit a description, remove; read-only when the sheet has no Date header; Save writes only changed rows in place (SPEC §4.5, §4.8)
+- [x] **Resources** in Settings › Resources: add, rename (tasks follow), Type, Color (palette or custom), remove unused; invalid names refused with the reason; palette colors kept when one above is removed; read-only without a Name header; Save writes the changed cells in place (SPEC §4.4, §4.8)
+- [x] Plan mode: a calendar change recalculates and the "Plan recalculated — N tasks moved" toast opens Changes; Track mode keeps the baseline
+- [x] SPEC first: §1, §2, §4.1, §4.2, §4.4–§4.8, §5.1, §5.11, §7.4, §7.8, new §7.14, §8, §9.3, §11.1, §12, §15, §16, §17 (8 decisions)
+- [x] `npm run typecheck` clean; `npm test` 69 files, 836 tests (also with `TZ=UTC` and `CI` set, as on GitHub), coverage 99.36 %; build; `file://` in headless Chrome and Edge, 22/22 checks each: the sample opened through the picker, Plan mode, Sunday unticked → "Plan recalculated — 11 tasks moved", Sundays grey and Saturdays tinted at Day zoom, a holiday range added and sorted, a resource in use not removable, a duplicate name refused with its reason, a rename followed by the tasks, Undo/Redo of the whole Apply, Save through the handle, Print Gantt greying the days off, no network, no console errors; the saved file (Working Days appended, two holidays and a resource added below, ACME renamed in its own row) and the regenerated `sample-project.xlsx` and `messy.xlsx` open in Excel 365 without repair
+- [x] Half-day durations (0.5d): `docs/proposal-half-day.md`, for the owner to read before any code (four decisions listed at its end)
+
+### Owner checks still open
+- Same as M5 (a real OneDrive file: permission prompt, Excel-locked file, conflict).
+- Read the half-day proposal and decide its four points.

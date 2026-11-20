@@ -1,0 +1,291 @@
+/* Settings (SPEC §7.14): a wider dialog whose tab panel scrolls when the window is short, so the tabs, Apply and
+   Cancel stay in view. `[open]` keeps the closed dialog hidden. */
+.dialog-settings {
+  width: min(640px, calc(100vw - 2 * var(--sp-6)));
+}
+
+.dialog-settings[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2 * var(--sp-6));
+  overflow: hidden;
+}
+
+.dialog-settings .dialog-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Tabs: text buttons over a rule; the selected one is underlined in the accent */
+.settings-tabs {
+  display: flex;
+  gap: var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-tab {
+  height: var(--control-h);
+  margin-bottom: -1px;
+  padding: 0 var(--sp-1);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.settings-tab:hover {
+  color: var(--text);
+}
+
+.settings-tab[aria-selected='true'] {
+  border-bottom-color: var(--accent);
+  color: var(--accent-text);
+}
+
+/* The panel keeps one height across tabs, so the dialog doesn't jump when a tab changes */
+.settings-panel {
+  height: 440px;
+  max-height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-1) var(--sp-1) var(--sp-2);
+}
+
+.settings-panel > .form {
+  margin-top: var(--sp-4);
+}
+
+.settings-section {
+  min-width: 0;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.settings-section legend {
+  margin-bottom: var(--sp-2);
+  padding: 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.settings-hint {
+  margin: var(--sp-2) 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh);
+}
+
+/* Something the user should read: an unreadable Working Days text, a sheet that can't be written */
+.settings-note {
+  margin: var(--sp-2) 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: var(--risk-soft);
+  color: var(--risk-text);
+  font-size: var(--fs-sm);
+  line-height: var(--lh);
+}
+
+.settings-error {
+  margin: var(--sp-1) 0 0;
+  color: var(--late-text);
+  font-size: var(--fs-sm);
+  line-height: var(--lh);
+}
+
+/* Working days: seven boxes in a row, Monday first */
+.weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.weekday {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h);
+  padding: 0 var(--sp-3) 0 var(--sp-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+
+.weekday:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-softer);
+}
+
+.weekday:has(input:disabled) {
+  cursor: default;
+}
+
+.weekday input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* Holidays: From, To, Description, Add on one line (wrapping when narrow) */
+.holiday-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-2);
+}
+
+.holiday-add .field input {
+  height: var(--control-h);
+}
+
+.holiday-add-text {
+  flex: 1 1 160px;
+}
+
+.holiday-add .settings-error {
+  flex-basis: 100%;
+}
+
+/* Lists of holidays and resources: one row each, with a hairline between */
+.settings-list {
+  margin: var(--sp-3) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-list > li {
+  padding: var(--sp-1) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.holiday-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.holiday-date {
+  flex: none;
+  width: 128px;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-input {
+  height: var(--control-h);
+  min-width: 0;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--border-strong);
+  border-bottom-color: var(--field-edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-md);
+}
+
+.settings-input:focus {
+  border-color: var(--accent);
+}
+
+.settings-input[aria-invalid='true'] {
+  border-color: var(--late);
+}
+
+.settings-input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.holiday-list .settings-input {
+  flex: 1 1 160px;
+}
+
+.holiday-off {
+  margin: 0;
+}
+
+/* Resources: swatch, name, type, the tasks that use it, remove */
+.resource-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.resource-name {
+  flex: 1 1 auto;
+}
+
+.resource-type {
+  flex: none;
+  width: 120px;
+}
+
+.resource-used {
+  flex: none;
+  width: 64px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+.swatch-button {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+}
+
+.swatch-button[aria-expanded='true'],
+.swatch-button[aria-pressed='true'] {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.swatch-small {
+  width: 20px;
+  height: 20px;
+}
+
+.resource-palette {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-2) 0 var(--sp-1) 32px;
+}
+
+.resource-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--sp-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.resource-custom input {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.resource-list + .btn {
+  margin-top: var(--sp-1);
+}

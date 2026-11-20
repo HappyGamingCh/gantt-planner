@@ -197,6 +197,7 @@ describe('missing parts — SPEC §4.1, §4.8', () => {
       Owner: 'Somchai',
       'Project Start': new Date(Date.UTC(2026, 10, 2)),
       'Status Date': new Date(Date.UTC(2026, 10, 13)),
+      'Working Days': 'Mon, Tue, Wed, Thu, Fri, Sat, Sun', // appended: the file had no such field
       'Last Saved': new Date(Date.UTC(2026, 8, 30, 17, 0)),
       'App Version': '1.0.0',
     });

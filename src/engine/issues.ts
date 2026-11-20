@@ -54,6 +54,11 @@ const CATALOG: Record<IssueCode, { severity: Issue['severity']; message: string 
     severity: 'warning',
     message: 'Holidays sheet: no "Date" header in row 1; its dates ({n}) were not used, so they count as working days',
   },
+  W_BAD_WORKING_DAYS: {
+    severity: 'warning',
+    message:
+      'Project sheet: Working Days "{text}" is not a list of days such as Mon-Sat or Mon, Tue, Wed, so every day counts as a working day. Set the working days in Settings › Calendar',
+  },
   W_RESOURCES_NO_HEADER: {
     severity: 'warning',
     message:

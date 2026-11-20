@@ -14,7 +14,7 @@ import { barPaint, LABEL_DX, Links, MarkLabel, PlanMark, SummaryMark, TrackMark,
 import { DragGhost, DragTip, useBarDrag } from './drag';
 import { CORNER_RESERVE, GanttCorner } from './GanttCorner';
 import { GanttTooltip } from './GanttTooltip';
-import { fillScale, gridColumns, showsHolidays, showsWeekends, weekendDays, type GanttScale } from './scale';
+import { daysOff, fillScale, gridColumns, showsHolidays, showsWeekends, weekendDays, type GanttScale } from './scale';
 import { Timeline } from './Timeline';
 import './Gantt.css';
 
@@ -46,6 +46,8 @@ interface Props {
   statusDate: ISODate;
   today: ISODate;
   holidays: Holiday[];
+  /** The project's working weekdays (§4.2); the others are drawn as non-working days. */
+  workingDays?: readonly number[];
   selection: number[];
   info: Map<string, AssigneeInfo>;
   colorBy: ColorBy;
@@ -55,7 +57,7 @@ interface Props {
   paneWidth: number;
 }
 
-export function Gantt({ rows, mode, scale, calendar, rowHeight, statusDate, today, holidays, selection, info, colorBy, critical, paneWidth }: Props) {
+export function Gantt({ rows, mode, scale, calendar, rowHeight, statusDate, today, holidays, workingDays, selection, info, colorBy, critical, paneWidth }: Props) {
   const [hoverId, setHoverId] = useState<number | null>(null);
   const [tipHidden, setTipHidden] = useState(false); // Esc hid the card until the pointer leaves the bar
   const pointer = useRef<Point>({ x: 0, y: 0 });
@@ -64,7 +66,7 @@ export function Gantt({ rows, mode, scale, calendar, rowHeight, statusDate, toda
   const width = Math.max(scale.width + LABEL_ROOM, paneWidth);
   const drawn = useMemo(() => fillScale(scale, width), [scale, width]);
   const height = rows.length * rowHeight;
-  const visibleHolidays = useMemo(() => holidays.filter((h) => h.date >= drawn.start && drawn.x(h.date) < drawn.width), [holidays, drawn]);
+  const visibleHolidays = useMemo(() => daysOff(drawn.start, drawn.days, holidays, workingDays), [holidays, workingDays, drawn]);
   // Track mode already marks the status date; the today line only adds a second line when the dates differ. The line
   // runs through the middle of the day, so it must fall inside the chart (the drawn scale can run a day past it).
   const showToday = today >= drawn.start && scale.x(today) + scale.px / 2 < width && (mode === 'Plan' || today !== statusDate);
@@ -73,11 +75,11 @@ export function Gantt({ rows, mode, scale, calendar, rowHeight, statusDate, toda
   const dragIndex = drag ? rows.findIndex((row) => row.task.id === drag.row.task.id) : -1;
   const header = useMemo(
     () => (
-      <Timeline scale={drawn} width={width} holidays={visibleHolidays} statusDate={mode === 'Track' ? statusDate : undefined} today={showToday ? today : undefined} rightInset={CORNER_RESERVE}>
+      <Timeline scale={drawn} width={width} holidays={visibleHolidays} workingDays={workingDays} statusDate={mode === 'Track' ? statusDate : undefined} today={showToday ? today : undefined} rightInset={CORNER_RESERVE}>
         <GanttCorner />
       </Timeline>
     ),
-    [drawn, width, visibleHolidays, mode, statusDate, showToday, today],
+    [drawn, width, visibleHolidays, workingDays, mode, statusDate, showToday, today],
   );
 
   // Esc hides the hover card (WCAG 1.4.13) until the pointer leaves the bar; the same press still closes the drawer.
@@ -147,7 +149,7 @@ export function Gantt({ rows, mode, scale, calendar, rowHeight, statusDate, toda
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
       >
-        <Lanes rows={rows} rowHeight={rowHeight} width={width} drawn={drawn} holidays={visibleHolidays} selection={selection} />
+        <Lanes rows={rows} rowHeight={rowHeight} width={width} drawn={drawn} holidays={visibleHolidays} workingDays={workingDays} selection={selection} />
         <Links rows={rows} mode={mode} rowHeight={rowHeight} scale={scale} focus={linkFocus(hoverId, rows, selection)} critical={critical} />
         <Marks rows={rows} mode={mode} rowHeight={rowHeight} scale={scale} colorBy={colorBy} info={info} critical={critical} selection={selection} dragIndex={dragIndex} onDragStart={mode === 'Plan' ? start : undefined} />
         {drag && dragIndex >= 0 && <DragGhost drag={drag} top={dragIndex * rowHeight} rowHeight={rowHeight} scale={scale} cal={calendar} />}
@@ -167,7 +169,23 @@ export function Gantt({ rows, mode, scale, calendar, rowHeight, statusDate, toda
 }
 
 /** Row lanes, holiday columns and grid lines, drawn over the whole width (`drawn`). */
-const Lanes = memo(function Lanes({ rows, rowHeight, width, drawn, holidays, selection }: { rows: Row[]; rowHeight: number; width: number; drawn: GanttScale; holidays: Holiday[]; selection: number[] }) {
+const Lanes = memo(function Lanes({
+  rows,
+  rowHeight,
+  width,
+  drawn,
+  holidays,
+  workingDays,
+  selection,
+}: {
+  rows: Row[];
+  rowHeight: number;
+  width: number;
+  drawn: GanttScale;
+  holidays: Holiday[];
+  workingDays?: readonly number[];
+  selection: number[];
+}) {
   const height = rows.length * rowHeight;
   const { weeks, days } = gridColumns(drawn);
   const vline = (i: number) => `M${i * drawn.px + 0.5},0V${height}`;
@@ -180,7 +198,7 @@ const Lanes = memo(function Lanes({ rows, rowHeight, width, drawn, holidays, sel
       </g>
       {showsWeekends(drawn) && (
         <g className="weekends">
-          {weekendDays(drawn).map((d) => (
+          {weekendDays(drawn, workingDays).map((d) => (
             <rect key={d} x={d * drawn.px} y={0} width={drawn.px} height={height} />
           ))}
         </g>

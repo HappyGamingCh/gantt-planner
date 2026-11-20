@@ -100,7 +100,7 @@ function Heatmap({ list, heat }: { list: AssigneeSummary[]; heat: Workload }) {
           <tr>
             <th />
             {heat.columns.map((d, j) => (
-              <th key={d} className={heat.holiday[j] ? 'heat-off' : undefined} title={heat.holiday[j] ? 'Holiday' : undefined}>
+              <th key={d} className={heat.holiday[j] ? 'heat-off' : undefined} title={heat.holiday[j] ? 'Non-working day' : undefined}>
                 {heat.unit === 'week' ? formatDayMonth(d) : <DayHead date={d} withMonth={j === 0 || d.endsWith('-01')} />}
               </th>
             ))}
@@ -115,7 +115,7 @@ function Heatmap({ list, heat }: { list: AssigneeSummary[]; heat: Workload }) {
               {heat.counts[i]!.map((n, j) =>
                 heat.holiday[j] ? (
                   <td key={j} className="heat-off">
-                    <span className="sr-only">Holiday</span>
+                    <span className="sr-only">Non-working day</span>
                   </td>
                 ) : (
                   <td key={j} className={`heat-${Math.min(n, 3)}`}>
@@ -127,7 +127,7 @@ function Heatmap({ list, heat }: { list: AssigneeSummary[]; heat: Workload }) {
           ))}
         </tbody>
       </table>
-      {heat.holiday.some(Boolean) && <p className="report-note">Hatched columns are holidays; they are not counted.</p>}
+      {heat.holiday.some(Boolean) && <p className="report-note">Hatched columns are non-working days; they are not counted.</p>}
     </figure>
   );
 }

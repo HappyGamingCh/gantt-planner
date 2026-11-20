@@ -20,8 +20,10 @@ export interface SheetProps {
   tableWidth: number;
   chartWidth: number;
   scale: GanttScale;
-  /** The holiday columns drawn. */
+  /** The non-working days drawn (daysOff). */
   holidays: Holiday[];
+  /** The project's working weekdays: only a worked Saturday or Sunday gets the weekend mark (§7.8). */
+  workingDays?: readonly number[];
   statusDate: ISODate;
   colorBy: ColorBy;
   critical: boolean;
@@ -29,12 +31,12 @@ export interface SheetProps {
 }
 
 export function PrintSheet(props: SheetProps) {
-  const { mode, chartWidth, scale, holidays, statusDate } = props;
+  const { mode, chartWidth, scale, holidays, workingDays, statusDate } = props;
   return (
     <div className="print-gantt">
       <PrintTable {...props} />
       <div className="print-chart" style={{ width: chartWidth }}>
-        <Timeline scale={scale} width={chartWidth} holidays={holidays} statusDate={mode === 'Track' ? statusDate : undefined} />
+        <Timeline scale={scale} width={chartWidth} holidays={holidays} workingDays={workingDays} statusDate={mode === 'Track' ? statusDate : undefined} />
         <PrintChart {...props} />
       </div>
     </div>
@@ -92,7 +94,7 @@ function PrintCell({ column, row, colorBy, info }: { column: PrintColumn; row: R
   );
 }
 
-function PrintChart({ rows, all, first, mode, chartWidth: width, scale, holidays, statusDate, colorBy, critical, info }: SheetProps) {
+function PrintChart({ rows, all, first, mode, chartWidth: width, scale, holidays, workingDays, statusDate, colorBy, critical, info }: SheetProps) {
   const height = rows.length * PRINT_ROW;
   const { weeks, days } = gridColumns(scale);
   const vlines = (list: number[]) => list.map((i) => `M${i * scale.px + 0.5},0V${height}`).join('');
@@ -105,7 +107,7 @@ function PrintChart({ rows, all, first, mode, chartWidth: width, scale, holidays
       </g>
       {showsWeekends(scale) && (
         <g className="weekends">
-          {weekendDays(scale).map((d) => (
+          {weekendDays(scale, workingDays).map((d) => (
             <rect key={d} x={d * scale.px} y={0} width={scale.px} height={height} />
           ))}
         </g>

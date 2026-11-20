@@ -143,3 +143,82 @@ describe('workdayDiff', () => {
     expect(cal.workdayDiff('2026-11-13', '2026-11-16')).toBe(1);
   });
 });
+
+// Working days of the week (§4.2, §5.1). Nov 2026: Mon 2, Sat 7, Sun 8; holidays Wed 11 Nov (worked) and Sun 15 Nov.
+describe('working days of the week — SPEC §5.1', () => {
+  const MON_FRI = [1, 2, 3, 4, 5];
+  const MON_SAT = [1, 2, 3, 4, 5, 6];
+  const week5 = createCalendar(['2026-11-11', '2026-11-15'], MON_FRI);
+  const week6 = createCalendar([], MON_SAT);
+
+  it('a weekday the project does not work is a non-working day, like a holiday', () => {
+    expect(week5.isWorkday('2026-11-06')).toBe(true); // Fri
+    expect(week5.isWorkday('2026-11-07')).toBe(false); // Sat
+    expect(week5.isWorkday('2026-11-08')).toBe(false); // Sun
+    expect(week5.isWorkday('2026-11-11')).toBe(false); // holiday on a worked day
+    expect(week6.isWorkday('2026-11-07')).toBe(true);
+    expect(week6.isWorkday('2026-11-08')).toBe(false);
+  });
+
+  it('snaps, steps and adds across weekends and holidays', () => {
+    expect(week5.snapForward('2026-11-07')).toBe('2026-11-09');
+    expect(week5.nextWorkday('2026-11-06')).toBe('2026-11-09');
+    expect(week5.nextWorkday('2026-11-10')).toBe('2026-11-12'); // past the Wednesday holiday
+    expect(week5.addWorkdays('2026-11-06', 1)).toBe('2026-11-09');
+    expect(week5.addWorkdays('2026-11-02', 4)).toBe('2026-11-06');
+    expect(week5.addWorkdays('2026-11-02', 9)).toBe('2026-11-16'); // the holiday on the 11th costs a day
+    expect(week5.addWorkdays('2026-11-09', -1)).toBe('2026-11-06');
+    expect(week5.addWorkdays('2026-11-08', 0)).toBe('2026-11-09');
+    expect(week6.addWorkdays('2026-11-02', 6)).toBe('2026-11-09'); // Mon + 6 working days, Sunday skipped
+  });
+
+  it('counts working days in whole weeks and parts of weeks; a holiday on a day off costs nothing', () => {
+    expect(week5.countWorkdays('2026-11-02', '2026-11-08')).toBe(5);
+    expect(week5.countWorkdays('2026-11-02', '2026-11-15')).toBe(9); // 10 weekdays less Wed 11; Sun 15 was off anyway
+    expect(week5.countWorkdays('2026-11-07', '2026-11-08')).toBe(0);
+    expect(week5.countWorkdays('2026-11-06', '2026-11-09')).toBe(2);
+    expect(week6.countWorkdays('2026-11-01', '2026-11-30')).toBe(25); // November 2026 has 5 Sundays
+    expect(week5.workdayDiff('2026-11-06', '2026-11-09')).toBe(1);
+    expect(week5.workdayDiff('2026-11-09', '2026-11-06')).toBe(-1);
+  });
+
+  it('one working day a week', () => {
+    const mondays = createCalendar([], [1]);
+    expect(mondays.addWorkdays('2026-11-02', 2)).toBe('2026-11-16');
+    expect(mondays.countWorkdays('2026-11-01', '2026-11-30')).toBe(5);
+    expect(mondays.snapForward('2026-11-03')).toBe('2026-11-09');
+  });
+
+  it('no working weekday at all, or a list without weekdays, counts every day (never an endless search)', () => {
+    for (const days of [[], [9]]) {
+      const c = createCalendar([], days);
+      expect(c.isWorkday('2026-11-08')).toBe(true);
+      expect(c.countWorkdays('2026-11-02', '2026-11-08')).toBe(7);
+    }
+    expect(createCalendar([], undefined).countWorkdays('2026-11-02', '2026-11-08')).toBe(7);
+  });
+
+  it('matches a day-by-day count for every pattern of working days', () => {
+    const holidays = ['2026-01-01', '2026-04-13', '2026-04-14', '2026-04-15', '2026-05-02', '2026-05-03', '2026-12-31'];
+    let seed = 11;
+    const rand = (max: number) => (seed = (seed * 48271) % 2147483647) % max;
+    for (let mask = 1; mask < 128; mask++) {
+      const days = [0, 1, 2, 3, 4, 5, 6].filter((d) => mask & (1 << d));
+      const c = createCalendar(holidays, days);
+      const brute = (a: string, b: string) => {
+        let n = 0;
+        for (let d = a; d <= b; d = addDays(d, 1)) if (c.isWorkday(d)) n++;
+        return n;
+      };
+      for (let i = 0; i < 12; i++) {
+        const a = addDays('2025-12-20', rand(420));
+        const b = addDays(a, rand(40) - 3);
+        expect(c.countWorkdays(a, b)).toBe(b < a ? 0 : brute(a, b));
+        const n = rand(20) - 5;
+        const moved = c.addWorkdays(a, n);
+        expect(c.isWorkday(moved)).toBe(true);
+        expect(c.workdayDiff(c.snapForward(a), moved)).toBe(n);
+      }
+    }
+  });
+});

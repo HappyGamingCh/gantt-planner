@@ -6,8 +6,22 @@ import { cellText, cleanName, formulaText, parseDate } from './cells';
 import type { CellValue, Row, Worksheet } from './exceljs';
 import { BUDDHIST_ERA } from './readMessages';
 import { HOLIDAY_HEADERS, PROJECT_FIELDS, RESOURCE_HEADERS, headerColumns, headerKey, resourcesWithoutName, type ProjectField } from './schema';
+import { formatWorkingDays, parseWorkingDays } from './workingDays';
 
-export function readProject(ws: Worksheet | undefined, tasks: readonly Task[], today: ISODate, date1904: boolean, changes: Change[]): Project {
+/** Where a resource was read from (`Resource.source`): its row, and its name as read (lower case) to check the row still has it. */
+export interface ResourceSource {
+  row: number;
+  key: string;
+}
+
+export function readProject(
+  ws: Worksheet | undefined,
+  tasks: readonly Task[],
+  today: ISODate,
+  date1904: boolean,
+  changes: Change[],
+  issues: Issue[] = [],
+): Project {
   const raw = new Map<ProjectField, CellValue>();
   for (let r = 1; ws && r <= ws.rowCount; r++) {
     const row = ws.findRow(r);
@@ -54,6 +68,16 @@ export function readProject(ws: Worksheet | undefined, tasks: readonly Task[], t
   else if (modeText.toLowerCase() !== mode.toLowerCase()) change('Mode', modeText, mode, 'corrected', 'Mode is Plan or Track');
 
   const project: Project = { name, owner: cleanName(cellText(value('Owner'))), projectStart, statusDate, mode };
+  // §4.7 Working Days: blank or missing = every day, recording nothing. Text other than the app's own form is kept,
+  // so Save writes it back as typed until the user sets the working days in the app (§4.8).
+  const daysCell = cellText(value('Working Days'));
+  const daysText = daysCell.trim();
+  if (daysText !== '') {
+    const days = parseWorkingDays(daysText);
+    if (days === null) issues.push(makeIssue('W_BAD_WORKING_DAYS', { text: daysText }));
+    else if (days.length < 7) project.workingDays = days;
+    if (days === null || daysCell !== formatWorkingDays(days)) project.workingDaysText = daysCell;
+  }
   // Any other formula: its last value is used and Save writes that value (§4.8), so the formula goes. Say so (§5.3).
   const values: [ProjectField, string][] = [
     ['Project Name', project.name],
@@ -61,6 +85,7 @@ export function readProject(ws: Worksheet | undefined, tasks: readonly Task[], t
     ['Project Start', projectStart],
     ['Status Date', statusDate],
     ['Mode', mode],
+    ['Working Days', daysText],
   ];
   for (const [field, to] of values) {
     const formula = formulaText(value(field));
@@ -102,7 +127,7 @@ export function readResources(ws: Worksheet | undefined, issues: Issue[]): Resou
     const name = row ? cleanName(cellText(row.findCell(nameCol)?.value)) : '';
     if (!row || name === '' || seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
-    const resource: Resource = { name };
+    const resource: Resource = { name, source: { row: r, key: name.toLowerCase() } satisfies ResourceSource };
     const type = (['Person', 'Team', 'Contractor'] as const).find((t) => t.toLowerCase() === text(row, 'Type').toLowerCase());
     if (type) resource.type = type;
     const color = text(row, 'Color');
